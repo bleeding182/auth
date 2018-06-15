@@ -22,8 +22,6 @@ Additionally this should be an example for you on how to implement your own Auth
 As already hinted above, this library implements (some of) the boilerplate needed to use the Authenticator Framework.
 The library includes a basic `OAuthAccountManager` that can be used as a convenience for a single-user application.
 
-_Note: Currently there is only support for single users but support for multiple is planned._
-
 Further, when using OkHttp, you can use `RequestAuthInterceptor` and `RequestRetryAuthenticator` to authenticate your HTTP requests.
 
 ### Usage / Setup
