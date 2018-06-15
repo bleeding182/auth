@@ -29,6 +29,10 @@ android {
     }
 }
 
+repositories {
+    maven { url 'https://jitpack.io' }
+}
+
 ext {
     retrofit = "2.3.0"
     okhttp = "3.9.0"
@@ -36,8 +40,11 @@ ext {
 }
 
 dependencies {
-    implementation project(':auth')
-    implementation project(':auth-okhttp')
+//    implementation project(':auth')
+//    implementation project(':auth-okhttp')
+
+    implementation 'com.github.bleeding182.auth:auth:master'
+    implementation 'com.github.bleeding182.auth:auth-okhttp:master'
 
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     androidTestImplementation('com.android.support.test.espresso:espresso-core:3.0.1', {

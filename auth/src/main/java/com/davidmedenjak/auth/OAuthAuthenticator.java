@@ -15,6 +15,7 @@ import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -37,8 +38,7 @@ public class OAuthAuthenticator extends AbstractAccountAuthenticator {
 
     private boolean loggingEnabled = false;
 
-    private boolean fetchingToken;
-    private List<AccountAuthenticatorResponse> queue = null;
+    private HashMap<Account, FetchingAuthModel> activeLookups = new HashMap<>();
 
     @Inject
     public OAuthAuthenticator(Context context, AuthService service) {
@@ -99,21 +99,21 @@ public class OAuthAuthenticator extends AbstractAccountAuthenticator {
                 "getAuthToken for %s as %s with options %s",
                 account, authTokenType, BundleUtil.toString(options));
 
-        if (isAnotherThreadHandlingIt(response)) return null;
+        if (isAnotherThreadHandlingIt(account, response)) return null;
 
         final String authToken = accountManager.peekAuthToken(account, authTokenType);
 
         if (TextUtils.isEmpty(authToken)) {
             synchronized (this) {
                 // queue as well
-                isAnotherThreadHandlingIt(response);
+                isAnotherThreadHandlingIt(account, response);
             }
 
             final String refreshToken = accountManager.getPassword(account);
             service.authenticate(refreshToken, new AuthCallback(account, authTokenType));
         } else {
             final Bundle resultBundle = createResultBundle(account, authToken);
-            returnResultToQueuedResponses((r) -> r.onResult(resultBundle));
+            returnResultToQueuedResponses(account, (r) -> r.onResult(resultBundle));
             return resultBundle;
         }
 
@@ -122,20 +122,26 @@ public class OAuthAuthenticator extends AbstractAccountAuthenticator {
     }
 
     private synchronized boolean isAnotherThreadHandlingIt(
-            @NonNull AccountAuthenticatorResponse response) {
-        if (fetchingToken) {
+            Account account, @NonNull AccountAuthenticatorResponse response) {
+
+        if (!activeLookups.containsKey(account)) {
+            activeLookups.put(account, new FetchingAuthModel());
+        }
+        final FetchingAuthModel authModel = activeLookups.get(account);
+
+        if (authModel.fetchingToken) {
             // another thread is already working on it, register for callback
-            List<AccountAuthenticatorResponse> q = queue;
+            List<AccountAuthenticatorResponse> q = authModel.queue;
             if (q == null) {
                 q = new ArrayList<>();
-                queue = q;
+                authModel.queue = q;
             }
             q.add(response);
             // we return null, the result will be sent with the `response`
             return true;
         }
         // we have to fetch the token, and return the result other threads
-        fetchingToken = true;
+        authModel.fetchingToken = true;
         return false;
     }
 
@@ -191,16 +197,17 @@ public class OAuthAuthenticator extends AbstractAccountAuthenticator {
         }
     }
 
-    private void returnResultToQueuedResponses(ResponseCallback callback) {
+    private void returnResultToQueuedResponses(Account account, ResponseCallback callback) {
         for (; ; ) {
             List<AccountAuthenticatorResponse> q;
             synchronized (this) {
-                q = queue;
+                final FetchingAuthModel authModel = activeLookups.get(account);
+                q = authModel.queue;
                 if (q == null) {
-                    fetchingToken = false;
+                    authModel.fetchingToken = false;
                     return;
                 }
-                queue = null;
+                authModel.queue = null;
             }
             for (AccountAuthenticatorResponse r : q) {
                 callback.returnResult(r);
@@ -210,6 +217,11 @@ public class OAuthAuthenticator extends AbstractAccountAuthenticator {
 
     private interface ResponseCallback {
         void returnResult(AccountAuthenticatorResponse response);
+    }
+
+    private class FetchingAuthModel {
+        private boolean fetchingToken = false;
+        private List<AccountAuthenticatorResponse> queue;
     }
 
     private class AuthCallback implements AuthService.Callback {
@@ -228,13 +240,13 @@ public class OAuthAuthenticator extends AbstractAccountAuthenticator {
             accountManager.setAuthToken(account, authTokenType, tokenPair.accessToken);
 
             final Bundle bundle = createResultBundle(account, tokenPair.accessToken);
-            returnResultToQueuedResponses((r) -> r.onResult(bundle));
+            returnResultToQueuedResponses(account, (r) -> r.onResult(bundle));
         }
 
         @Override
         public void onError(@NonNull Throwable error) {
             int code = AccountManager.ERROR_CODE_NETWORK_ERROR;
-            returnResultToQueuedResponses((r) -> r.onError(code, error.getMessage()));
+            returnResultToQueuedResponses(account, (r) -> r.onError(code, error.getMessage()));
         }
     }
 }

@@ -60,7 +60,7 @@ public class OAuthAuthenticatorTest {
         shadowOf(am).setAuthToken(account, tokenType, accessToken);
 
         // when
-        Bundle result = getAuthTokenResponse();
+        Bundle result = getAuthTokenWithResponse();
 
         // then
         assertNotNull(result);
@@ -77,7 +77,7 @@ public class OAuthAuthenticatorTest {
         withServiceResponse(callback -> callback.onError(new Throwable()));
 
         // when
-        Bundle result = getAuthTokenResponse();
+        Bundle result = getAuthTokenWithResponse();
 
         // then
         assertNull(result);
@@ -96,7 +96,7 @@ public class OAuthAuthenticatorTest {
         withServiceResponse(callback -> callback.onAuthenticated(response));
 
         // when
-        Bundle result = getAuthTokenResponse();
+        Bundle result = getAuthTokenWithResponse();
 
         // then
         assertNull(result);
@@ -121,7 +121,7 @@ public class OAuthAuthenticatorTest {
                     if (!firedSecond[0]) {
                         firedSecond[0] = true;
                         // second request "before api call finishes"
-                        Bundle result = getAuthTokenResponse(secondResponse);
+                        Bundle result = getAuthTokenWithResponse(secondResponse);
                     }
 
                     // return result
@@ -129,7 +129,7 @@ public class OAuthAuthenticatorTest {
                 });
 
         // when
-        Bundle result = getAuthTokenResponse(response);
+        Bundle result = getAuthTokenWithResponse(response);
 
         // then
         assertNull(result);
@@ -138,23 +138,101 @@ public class OAuthAuthenticatorTest {
         verify(secondResponse).onResult(argThat(new AuthResponseMatcher(accessToken)));
     }
 
+    @Test
+    public void multipleUserRequestsTriggerRunConcurrently()
+            throws NetworkErrorException, AuthenticatorException, OperationCanceledException,
+                    IOException {
+
+        // given some complicated setup... simulate "concurrency" :/
+        Account[] users =
+                new Account[] {new Account("test1", "test"), new Account("test2", "test")};
+        String[] accessTokens = new String[] {"access1", "access2"};
+        String[] refreshTokens = new String[] {"refresh1", "refresh2"};
+
+        AccountAuthenticatorResponse[] firstResponses =
+                new AccountAuthenticatorResponse[] {
+                    mock(AccountAuthenticatorResponse.class),
+                    mock(AccountAuthenticatorResponse.class)
+                };
+        AccountAuthenticatorResponse[] secondResponses =
+                new AccountAuthenticatorResponse[] {
+                    mock(AccountAuthenticatorResponse.class),
+                    mock(AccountAuthenticatorResponse.class)
+                };
+
+        for (int i = 0; i < 2; i++) {
+            shadowOf(am).addAccount(users[i]);
+            shadowOf(am).setPassword(users[i], refreshTokens[i]);
+        }
+
+        // when the callback is called we wait for 4 requests to be made before returning any result
+        final AuthService.Callback[] callbacks = new AuthService.Callback[2];
+        withServiceResponse(
+                (refreshToken, callback) -> {
+                    if(refreshToken.equals(refreshTokens[0])) {
+                        // save callback until we finished requesting all 4 tokens
+                        callbacks[0] = callback;
+                        return;
+                    } else {
+                        callbacks[1] = callback;
+                    }
+
+                    // request seconds for every account
+                    for (int i = 0; i < 2; i++) {
+                        getAuthTokenWithResponse(users[i], secondResponses[i]);
+                    }
+
+                    // return result
+                    for (int i = 0; i < 2; i++) {
+                        callbacks[i].onAuthenticated(new TokenPair(accessTokens[i], refreshTokens[i]));
+                    }
+                });
+
+        Bundle[] results = new Bundle[2];
+        for (int i = 0; i < 2; i++) {
+            results[i] = getAuthTokenWithResponse(users[i], firstResponses[i]);
+        }
+
+        // there should be 2 api calls (2 accounts) for all 4 requests
+        verify(authService, times(2)).authenticate(anyString(), any());
+
+        for (int i = 0; i < 2; i++) {
+            // should all wait asynchronously, thus the result be null
+            assertNull(results[i]);
+
+            // each response should be called once with the right token
+            verify(firstResponses[i]).onResult(argThat(new AuthResponseMatcher(accessTokens[i])));
+            verify(secondResponses[i]).onResult(argThat(new AuthResponseMatcher(accessTokens[i])));
+        }
+    }
+
     private void withServiceResponse(Action1<AuthService.Callback> action) {
+        withServiceResponse((obj1, obj2) -> action.run(obj2));
+    }
+
+    private void withServiceResponse(Action2<String, AuthService.Callback> action) {
         Mockito.doAnswer(
                         invocation -> {
+                            String refreshToken = (String) invocation.getArguments()[0];
                             AuthService.Callback callback =
                                     (AuthService.Callback) invocation.getArguments()[1];
-                            action.run(callback);
+                            action.run(refreshToken, callback);
                             return null;
                         })
                 .when(authService)
                 .authenticate(anyString(), any(AuthService.Callback.class));
     }
 
-    private Bundle getAuthTokenResponse() {
-        return getAuthTokenResponse(response);
+    private Bundle getAuthTokenWithResponse() {
+        return getAuthTokenWithResponse(response);
     }
 
-    private Bundle getAuthTokenResponse(AccountAuthenticatorResponse response) {
+    private Bundle getAuthTokenWithResponse(AccountAuthenticatorResponse response) {
+        return getAuthTokenWithResponse(account, response);
+    }
+
+    private Bundle getAuthTokenWithResponse(
+            Account account, AccountAuthenticatorResponse response) {
         try {
             return authenticator.getAuthToken(response, account, "bearer", null);
         } catch (NetworkErrorException e) {
