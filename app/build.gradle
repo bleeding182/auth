@@ -1,12 +1,13 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 26
-    buildToolsVersion '26.0.2'
+    compileSdkVersion project.compileSdkVersion
+    buildToolsVersion project.buildToolsVersion
+
     defaultConfig {
         applicationId "com.davidmedenjak.redditsample"
         minSdkVersion 16
-        targetSdkVersion 26
+        targetSdkVersion 27
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -37,6 +38,12 @@ ext {
     retrofit = "2.3.0"
     okhttp = "3.9.0"
     supportLibrary = "26.1.0"
+}
+
+android {
+    lintOptions {
+        abortOnError false
+    }
 }
 
 dependencies {

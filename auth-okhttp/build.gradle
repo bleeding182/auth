@@ -1,13 +1,16 @@
 apply plugin: 'com.android.library'
+apply plugin: 'com.github.dcendents.android-maven'
+
+group = 'com.davidmedenjak.auth'
+version = '0.1.0'
 
 android {
-    compileSdkVersion 26
-
-
+    compileSdkVersion project.compileSdkVersion
+    buildToolsVersion project.buildToolsVersion
 
     defaultConfig {
         minSdkVersion 14
-        targetSdkVersion 26
+        targetSdkVersion 27
         versionCode 1
         versionName "1.0"
 
@@ -34,6 +37,12 @@ android {
     }
 }
 
+android {
+    lintOptions {
+        abortOnError false
+    }
+}
+
 dependencies {
     implementation project(':auth')
 
@@ -44,5 +53,5 @@ dependencies {
 
     testImplementation 'junit:junit:4.12'
     testImplementation 'com.squareup.okhttp3:mockwebserver:3.10.0'
-    testCompile "org.mockito:mockito-core:2.5.4"
+    testImplementation "org.mockito:mockito-core:2.5.4"
 }

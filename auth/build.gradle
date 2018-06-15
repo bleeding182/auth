@@ -1,13 +1,16 @@
 apply plugin: 'com.android.library'
+apply plugin: 'com.github.dcendents.android-maven'
+
+group = 'com.davidmedenjak.auth'
+version = '0.1.0'
 
 android {
-    compileSdkVersion 26
-
-
+    compileSdkVersion project.compileSdkVersion
+    buildToolsVersion project.buildToolsVersion
 
     defaultConfig {
         minSdkVersion 14
-        targetSdkVersion 26
+        targetSdkVersion 27
         versionCode 1
         versionName "1.0"
 
@@ -37,6 +40,12 @@ android {
     }
 }
 
+android {
+    lintOptions {
+        abortOnError false
+    }
+}
+
 dependencies {
     compileOnly 'com.android.support:support-annotations:27.1.1'
 
@@ -44,6 +53,6 @@ dependencies {
 
     testImplementation 'junit:junit:4.12'
     testImplementation "org.robolectric:robolectric:3.8"
-    testCompile "com.google.truth:truth:0.39"
-    testCompile "org.mockito:mockito-core:2.5.4"
+    testImplementation "com.google.truth:truth:0.39"
+    testImplementation "org.mockito:mockito-core:2.5.4"
 }
