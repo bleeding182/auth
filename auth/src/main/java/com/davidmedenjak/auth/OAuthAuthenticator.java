@@ -69,11 +69,12 @@ public class OAuthAuthenticator extends AbstractAccountAuthenticator {
                 Arrays.toString(requiredFeatures),
                 BundleUtil.toString(options));
 
-        final Intent intent = service.getLoginIntent();
-        intent.putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, response);
-
         final Bundle bundle = new Bundle();
-        bundle.putParcelable(AccountManager.KEY_INTENT, intent);
+        final Intent intent = service.getLoginIntent();
+        if (intent != null) {
+            intent.putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, response);
+            bundle.putParcelable(AccountManager.KEY_INTENT, intent);
+        }
 
         return bundle;
     }

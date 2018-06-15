@@ -85,6 +85,13 @@ public class OAuthAuthenticatorTest {
     }
 
     @Test
+    public void noLoginIntentProvided() throws NetworkErrorException {
+        Mockito.doAnswer(invocation -> null).when(authService).getLoginIntent();
+
+        Bundle result = authenticator.addAccount(response, account.type, tokenType, null, null);
+    }
+
+    @Test
     public void accessTokenReturnedAfterRefresh()
             throws NetworkErrorException, AuthenticatorException, OperationCanceledException,
                     IOException {
@@ -169,7 +176,7 @@ public class OAuthAuthenticatorTest {
         final AuthService.Callback[] callbacks = new AuthService.Callback[2];
         withServiceResponse(
                 (refreshToken, callback) -> {
-                    if(refreshToken.equals(refreshTokens[0])) {
+                    if (refreshToken.equals(refreshTokens[0])) {
                         // save callback until we finished requesting all 4 tokens
                         callbacks[0] = callback;
                         return;
@@ -184,7 +191,8 @@ public class OAuthAuthenticatorTest {
 
                     // return result
                     for (int i = 0; i < 2; i++) {
-                        callbacks[i].onAuthenticated(new TokenPair(accessTokens[i], refreshTokens[i]));
+                        callbacks[i].onAuthenticated(
+                                new TokenPair(accessTokens[i], refreshTokens[i]));
                     }
                 });
 
