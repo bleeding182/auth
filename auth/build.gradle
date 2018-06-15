@@ -1,3 +1,6 @@
+plugins {
+    id "com.jfrog.bintray" version "1.8.1"
+}
 apply plugin: 'com.android.library'
 apply plugin: 'com.github.dcendents.android-maven'
 
@@ -38,6 +41,44 @@ android {
             includeAndroidResources = true
         }
     }
+}
+
+bintray {
+    user = 'bleeding182'
+    key = System.getenv('BINTRAY_KEY')
+
+    pkg {
+        repo = 'bleeding182'
+        name = 'auth'
+        licenses = ['MIT']
+        vcsUrl = 'https://github.com/bleeding182/auth'
+        version {
+            name = project.version
+            desc = ''
+            vcsTag = System.getenv('TRAVIS_TAG')
+        }
+    }
+    configurations = ['archives']
+}
+
+task generateSourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier 'sources'
+}
+
+task generateJavadocs(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath()
+            .join(File.pathSeparator))
+}
+
+task generateJavadocsJar(type: Jar) {
+    from generateJavadocs.destinationDir
+    classifier 'javadoc'
+}
+
+artifacts {
+    archives generateSourcesJar, generateJavadocsJar
 }
 
 android {
