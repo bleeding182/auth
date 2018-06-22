@@ -30,6 +30,23 @@ There is an example project in the `/app` folder that uses the Reddit API that s
 
 Sadly there is still some boilerplate to include as you can see next.
 
+#### Gradle
+
+It is currently published on a simple bintray repository, so add the following at the end of your repositories.
+
+    repositories {
+        maven {
+            url "https://dl.bintray.com/bleeding182/bleeding182/"
+        }
+    }
+
+Then include the packages
+
+    implementation 'com.davidmedenjak.auth:auth:0.1.0'
+    implementation 'com.davidmedenjak.auth:auth-okhttp:0.1.0'
+
+_The library is currently pre-release. I will publish the artifacts on jcenter/maven central once I have some feedback and am happy with the initial release_
+
 #### Basic Setup
 
 You start by extending `AuthenticatorService` and return an implementation of `AuthService` that enables token refreshing. In your `AuthService` you call your API and trade a refresh token for a new access token.
