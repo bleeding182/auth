@@ -31,7 +31,7 @@ public class OAuthAccountManager implements AccountAuthenticator {
         this.accountType = accountType;
         this.accountManager = accountManager;
 
-        final Account[] accounts = accountManager.getAccounts();
+        final Account[] accounts = accountManager.getAccountsByType(accountType);
         if (accounts.length > 0) {
             account = accounts[0];
         }
