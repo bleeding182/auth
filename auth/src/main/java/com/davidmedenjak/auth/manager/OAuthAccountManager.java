@@ -27,7 +27,7 @@ public class OAuthAccountManager implements AccountAuthenticator {
     private final String accountType;
     private Account account;
 
-    public OAuthAccountManager(String accountType, AccountManager accountManager) {
+    public OAuthAccountManager(@NonNull String accountType, @NonNull AccountManager accountManager) {
         this.accountType = accountType;
         this.accountManager = accountManager;
 
@@ -62,11 +62,12 @@ public class OAuthAccountManager implements AccountAuthenticator {
         }
     }
 
+    @NonNull
     public String getAccountType() {
         return accountType;
     }
 
-    public void login(String name, TokenPair token, AccountData accountData) {
+    public void login(@NonNull String name, @NonNull TokenPair token, @NonNull AccountData accountData) {
         account = new Account(name, accountType);
 
         final String refreshToken = token.refreshToken;
@@ -99,13 +100,13 @@ public class OAuthAccountManager implements AccountAuthenticator {
         return account;
     }
 
-    public void setAccountData(String key, String value) {
+    public void setAccountData(@NonNull String key, @Nullable String value) {
         if (!isLoggedIn()) return;
 
         accountManager.setUserData(account, key, value);
     }
 
-    public void setAccountData(AccountData accountData) {
+    public void setAccountData(@NonNull AccountData accountData) {
         if (!isLoggedIn()) return;
 
         Bundle bundle = accountData.bundle;
@@ -116,7 +117,7 @@ public class OAuthAccountManager implements AccountAuthenticator {
     }
 
     @NonNull
-    public String getAccountData(String key) {
+    public String getAccountData(@NonNull String key) {
         if (!isLoggedIn()) return "";
 
         String data = accountManager.getUserData(account, key);
@@ -140,7 +141,7 @@ public class OAuthAccountManager implements AccountAuthenticator {
 
     @Override
     @NonNull
-    public String getNewAccessToken(String invalidAccessToken) throws IOException {
+    public String getNewAccessToken(@Nullable String invalidAccessToken) throws IOException {
         if (!isLoggedIn()) return "";
 
         accountManager.invalidateAuthToken(account.type, invalidAccessToken);
