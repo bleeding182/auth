@@ -11,6 +11,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 
 import com.davidmedenjak.auth.AccountAuthenticator;
 import com.davidmedenjak.auth.TokenPair;
@@ -124,6 +125,19 @@ public class OAuthAccountManager implements AccountAuthenticator {
 
         if (data == null) return "";
         return data;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    public void renameAccount(@NonNull String username) {
+        if (!isLoggedIn()) return;
+
+        accountManager.renameAccount(account, username, future -> {
+            try {
+                account = future.getResult();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }, null);
     }
 
     @Override
