@@ -54,6 +54,7 @@ public class RequestRetryAuthenticatorTest {
         assertNotNull(request);
         verify(accountAuthenticator, times(1)).getNewAccessToken(invalidAccessToken);
 
+        Assert.assertEquals(request.headers("Authorization").size(), 1);
         Assert.assertEquals("Bearer " + validAccessToken, request.header("Authorization"));
     }
 

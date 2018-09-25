@@ -57,6 +57,7 @@ public class RequestRetryAuthenticator implements Authenticator {
 
         return response.request()
                 .newBuilder()
+                .removeHeader(Headers.AUTHORIZATION)
                 .addHeader(Headers.AUTHORIZATION, authorization)
                 .build();
     }
