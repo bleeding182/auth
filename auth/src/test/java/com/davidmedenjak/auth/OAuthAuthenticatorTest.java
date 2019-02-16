@@ -28,7 +28,6 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.robolectric.Shadows.shadowOf;
 
 @RunWith(RobolectricTestRunner.class)
 public class OAuthAuthenticatorTest {
@@ -55,9 +54,9 @@ public class OAuthAuthenticatorTest {
     public void accessTokenReturnedImmediately()
             throws NetworkErrorException, AuthenticatorException, OperationCanceledException,
                     IOException {
-        shadowOf(am).addAccount(account);
+        am.addAccountExplicitly(account, null, null);
         final String accessToken = "access1";
-        shadowOf(am).setAuthToken(account, tokenType, accessToken);
+        am.setAuthToken(account, tokenType, accessToken);
 
         // when
         Bundle result = getAuthTokenWithResponse();
@@ -71,8 +70,8 @@ public class OAuthAuthenticatorTest {
     public void errorOnInvalidRefreshToken()
             throws NetworkErrorException, AuthenticatorException, OperationCanceledException,
                     IOException {
-        shadowOf(am).addAccount(account);
-        shadowOf(am).setPassword(account, "invalid");
+        am.addAccountExplicitly(account, null, null);
+        am.setPassword(account, "invalid");
 
         withServiceResponse(callback -> callback.onError(new Throwable()));
 
@@ -95,9 +94,9 @@ public class OAuthAuthenticatorTest {
     public void accessTokenReturnedAfterRefresh()
             throws NetworkErrorException, AuthenticatorException, OperationCanceledException,
                     IOException {
-        shadowOf(am).addAccount(account);
+        am.addAccountExplicitly(account, null, null);
         final String accessToken = "access1";
-        shadowOf(am).setPassword(account, "refresh1");
+        am.setPassword(account, "refresh1");
 
         TokenPair response = new TokenPair(accessToken, "refresh2");
         withServiceResponse(callback -> callback.onAuthenticated(response));
@@ -114,9 +113,9 @@ public class OAuthAuthenticatorTest {
     public void multipleRequestsTriggerASingleRefresh()
             throws NetworkErrorException, AuthenticatorException, OperationCanceledException,
                     IOException {
-        shadowOf(am).addAccount(account);
+        am.addAccountExplicitly(account, null, null);
         final String accessToken = "access1";
-        shadowOf(am).setPassword(account, "refresh1");
+        am.setPassword(account, "refresh1");
 
         AccountAuthenticatorResponse secondResponse = mock(AccountAuthenticatorResponse.class);
 
@@ -168,8 +167,8 @@ public class OAuthAuthenticatorTest {
                 };
 
         for (int i = 0; i < 2; i++) {
-            shadowOf(am).addAccount(users[i]);
-            shadowOf(am).setPassword(users[i], refreshTokens[i]);
+            am.addAccountExplicitly(users[i], null, null);
+            am.setPassword(users[i], refreshTokens[i]);
         }
 
         // when the callback is called we wait for 4 requests to be made before returning any result
