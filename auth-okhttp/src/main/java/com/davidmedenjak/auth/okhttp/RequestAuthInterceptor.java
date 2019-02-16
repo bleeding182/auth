@@ -1,6 +1,6 @@
 package com.davidmedenjak.auth.okhttp;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import com.davidmedenjak.auth.AccountAuthenticator;
 

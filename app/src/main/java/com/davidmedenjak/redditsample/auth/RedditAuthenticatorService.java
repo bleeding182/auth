@@ -2,7 +2,7 @@ package com.davidmedenjak.redditsample.auth;
 
 import android.content.Context;
 import android.content.Intent;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import android.util.Base64;
 
 import com.davidmedenjak.auth.AuthService;
