@@ -9,7 +9,7 @@ import android.util.Log;
 /**
  * A Service used to register {@link OAuthAuthenticator} with the Android framework.
  *
- * <p>You need to provide an {@link AuthService} that the authenticator can use for callbacks to
+ * <p>You need to provide an {@link AuthCallback} that the authenticator can use for callbacks to
  * your app.
  */
 public abstract class AuthenticatorService extends Service {
@@ -32,10 +32,10 @@ public abstract class AuthenticatorService extends Service {
     }
 
     /**
-     * Provide an AuthService to be used with the {@link OAuthAuthenticator}
+     * Provide an AuthCallback to be used with the {@link OAuthAuthenticator}
      *
-     * @return the authService
-     * @see AuthService
+     * @return the authCallback
+     * @see AuthCallback
      */
-    public abstract AuthService getAuthenticatorService();
+    public abstract AuthCallback getAuthenticatorService();
 }

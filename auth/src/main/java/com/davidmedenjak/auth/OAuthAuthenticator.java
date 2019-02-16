@@ -26,9 +26,9 @@ import javax.inject.Inject;
  *
  * <p>Token refreshes will always be done <i>once</i>. Even if multiple threads request a new access
  * token simultaneously only one thread will refresh the token via {@link
- * AuthService#authenticate(String, AuthService.Callback)} and propagate the result to the others.
- * This is to prevent problems with APIs that only allow one usage of refresh tokens and to reduce
- * load.
+ * com.davidmedenjak.auth.AuthCallback#authenticate(String,
+ * com.davidmedenjak.auth.AuthCallback.Callback)} and propagate the result to the others. This is to
+ * prevent problems with APIs that only allow one usage of refresh tokens and to reduce load.
  *
  * <p><b>Usage</b>
  *
@@ -36,14 +36,14 @@ import javax.inject.Inject;
  * OAuthAccountManager} that will wrap the framework {@link AccountManager} and provide a basic tool
  * for login / logout and accessToken handling with a single account.
  *
- * @see AuthService
+ * @see CallbackListener
  */
 @SuppressWarnings("unused")
 public class OAuthAuthenticator extends AbstractAccountAuthenticator {
 
     private static final String TAG = "OAuthAuthenticator";
 
-    private final AuthService service;
+    private final AuthCallback service;
     private final AccountManager accountManager;
 
     private boolean loggingEnabled = false;
@@ -51,7 +51,7 @@ public class OAuthAuthenticator extends AbstractAccountAuthenticator {
     private HashMap<Account, FetchingAuthModel> activeLookups = new HashMap<>();
 
     @Inject
-    public OAuthAuthenticator(Context context, AuthService service) {
+    public OAuthAuthenticator(Context context, AuthCallback service) {
         super(context);
         this.service = service;
         this.accountManager = AccountManager.get(context);
@@ -121,7 +121,7 @@ public class OAuthAuthenticator extends AbstractAccountAuthenticator {
             }
 
             final String refreshToken = accountManager.getPassword(account);
-            service.authenticate(refreshToken, new AuthCallback(account, authTokenType));
+            service.authenticate(refreshToken, new CallbackListener(account, authTokenType));
         } else {
             final Bundle resultBundle = createResultBundle(account, authToken);
             returnResultToQueuedResponses(account, (r) -> r.onResult(resultBundle));
@@ -235,12 +235,12 @@ public class OAuthAuthenticator extends AbstractAccountAuthenticator {
         private List<AccountAuthenticatorResponse> queue;
     }
 
-    private class AuthCallback implements AuthService.Callback {
+    private class CallbackListener implements AuthCallback.Callback {
 
         private final Account account;
         private final String authTokenType;
 
-        private AuthCallback(Account account, String authTokenType) {
+        private CallbackListener(Account account, String authTokenType) {
             this.account = account;
             this.authTokenType = authTokenType;
         }

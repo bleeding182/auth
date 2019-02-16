@@ -37,7 +37,7 @@ public class OAuthAuthenticatorTest {
     private AccountManager am;
 
     private OAuthAuthenticator authenticator;
-    private AuthService authService;
+    private AuthCallback authCallback;
     private AccountAuthenticatorResponse response;
 
     @Before
@@ -45,9 +45,9 @@ public class OAuthAuthenticatorTest {
         am = AccountManager.get(RuntimeEnvironment.application);
 
         response = mock(AccountAuthenticatorResponse.class);
-        authService = mock(AuthService.class);
+        authCallback = mock(AuthCallback.class);
 
-        authenticator = new OAuthAuthenticator(RuntimeEnvironment.application, authService);
+        authenticator = new OAuthAuthenticator(RuntimeEnvironment.application, authCallback);
     }
 
     @Test
@@ -85,7 +85,7 @@ public class OAuthAuthenticatorTest {
 
     @Test
     public void noLoginIntentProvided() throws NetworkErrorException {
-        Mockito.doAnswer(invocation -> null).when(authService).getLoginIntent();
+        Mockito.doAnswer(invocation -> null).when(authCallback).getLoginIntent();
 
         Bundle result = authenticator.addAccount(response, account.type, tokenType, null, null);
     }
@@ -139,7 +139,7 @@ public class OAuthAuthenticatorTest {
 
         // then
         assertNull(result);
-        verify(authService, times(1)).authenticate(anyString(), any());
+        verify(authCallback, times(1)).authenticate(anyString(), any());
         verify(response).onResult(argThat(new AuthResponseMatcher(accessToken)));
         verify(secondResponse).onResult(argThat(new AuthResponseMatcher(accessToken)));
     }
@@ -172,7 +172,7 @@ public class OAuthAuthenticatorTest {
         }
 
         // when the callback is called we wait for 4 requests to be made before returning any result
-        final AuthService.Callback[] callbacks = new AuthService.Callback[2];
+        final AuthCallback.Callback[] callbacks = new AuthCallback.Callback[2];
         withServiceResponse(
                 (refreshToken, callback) -> {
                     if (refreshToken.equals(refreshTokens[0])) {
@@ -201,7 +201,7 @@ public class OAuthAuthenticatorTest {
         }
 
         // there should be 2 api calls (2 accounts) for all 4 requests
-        verify(authService, times(2)).authenticate(anyString(), any());
+        verify(authCallback, times(2)).authenticate(anyString(), any());
 
         for (int i = 0; i < 2; i++) {
             // should all wait asynchronously, thus the result be null
@@ -213,21 +213,21 @@ public class OAuthAuthenticatorTest {
         }
     }
 
-    private void withServiceResponse(Action1<AuthService.Callback> action) {
+    private void withServiceResponse(Action1<AuthCallback.Callback> action) {
         withServiceResponse((obj1, obj2) -> action.run(obj2));
     }
 
-    private void withServiceResponse(Action2<String, AuthService.Callback> action) {
+    private void withServiceResponse(Action2<String, AuthCallback.Callback> action) {
         Mockito.doAnswer(
                         invocation -> {
                             String refreshToken = (String) invocation.getArguments()[0];
-                            AuthService.Callback callback =
-                                    (AuthService.Callback) invocation.getArguments()[1];
+                            AuthCallback.Callback callback =
+                                    (AuthCallback.Callback) invocation.getArguments()[1];
                             action.run(refreshToken, callback);
                             return null;
                         })
-                .when(authService)
-                .authenticate(anyString(), any(AuthService.Callback.class));
+                .when(authCallback)
+                .authenticate(anyString(), any(AuthCallback.Callback.class));
     }
 
     private Bundle getAuthTokenWithResponse() {

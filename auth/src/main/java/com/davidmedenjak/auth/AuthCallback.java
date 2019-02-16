@@ -9,10 +9,10 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 /**
- * A service to link your app with {@link OAuthAuthenticator}. This is a callback to refresh your
- * users access tokens or start a login flow.
+ * A callback to link your app with {@link OAuthAuthenticator}. This is used to refresh your users
+ * access tokens or start a login flow.
  */
-public interface AuthService {
+public interface AuthCallback {
 
     /**
      * Create an Intent to start your Login flow. This will be used if a user selects `Add Account`
@@ -42,7 +42,7 @@ public interface AuthService {
     interface Callback {
         /**
          * Called after a token was successfully refreshed. This or {@link #onError(Throwable)} must
-         * be called after {@link AuthService#authenticate(String, Callback)} was called.
+         * be called after {@link AuthCallback#authenticate(String, Callback)} was called.
          *
          * @param tokenPair the pair of a new access and refresh token
          * @see #onError(Throwable)
@@ -50,7 +50,7 @@ public interface AuthService {
         void onAuthenticated(@NonNull TokenPair tokenPair);
 
         /**
-         * Called after the token refresh initiated by {@link AuthService#authenticate(String,
+         * Called after the token refresh initiated by {@link AuthCallback#authenticate(String,
          * Callback)} failed. This or {@link #onAuthenticated(TokenPair)} must be called to notify
          * waiting threads.
          *
