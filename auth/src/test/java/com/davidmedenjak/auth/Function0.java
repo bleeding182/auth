@@ -1,6 +1,6 @@
 package com.davidmedenjak.auth;
 
 @FunctionalInterface
-public interface Action1<T> {
-    void run(T object);
+public interface Function0<R> {
+    R run();
 }

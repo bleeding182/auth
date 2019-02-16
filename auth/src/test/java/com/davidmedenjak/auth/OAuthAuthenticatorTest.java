@@ -73,7 +73,10 @@ public class OAuthAuthenticatorTest {
         am.addAccountExplicitly(account, null, null);
         am.setPassword(account, "invalid");
 
-        withServiceResponse(callback -> callback.onError(new Throwable()));
+        withServiceResponse(
+                callback -> {
+                    throw new RuntimeException();
+                });
 
         // when
         Bundle result = getAuthTokenWithResponse();
@@ -99,7 +102,7 @@ public class OAuthAuthenticatorTest {
         am.setPassword(account, "refresh1");
 
         TokenPair response = new TokenPair(accessToken, "refresh2");
-        withServiceResponse(callback -> callback.onAuthenticated(response));
+        withServiceResponse(callback -> response);
 
         // when
         Bundle result = getAuthTokenWithResponse();
@@ -131,7 +134,7 @@ public class OAuthAuthenticatorTest {
                     }
 
                     // return result
-                    cb.onAuthenticated(authResponse);
+                    return authResponse;
                 });
 
         // when
@@ -139,7 +142,7 @@ public class OAuthAuthenticatorTest {
 
         // then
         assertNull(result);
-        verify(authCallback, times(1)).authenticate(anyString(), any());
+        verify(authCallback, times(1)).authenticate(anyString());
         verify(response).onResult(argThat(new AuthResponseMatcher(accessToken)));
         verify(secondResponse).onResult(argThat(new AuthResponseMatcher(accessToken)));
     }
@@ -172,27 +175,15 @@ public class OAuthAuthenticatorTest {
         }
 
         // when the callback is called we wait for 4 requests to be made before returning any result
-        final AuthCallback.Callback[] callbacks = new AuthCallback.Callback[2];
         withServiceResponse(
-                (refreshToken, callback) -> {
-                    if (refreshToken.equals(refreshTokens[0])) {
-                        // save callback until we finished requesting all 4 tokens
-                        callbacks[0] = callback;
-                        return;
-                    } else {
-                        callbacks[1] = callback;
-                    }
+                (refreshToken) -> {
+                    int idx = refreshToken.equals(refreshTokens[0]) ? 0 : 1;
 
                     // request seconds for every account
-                    for (int i = 0; i < 2; i++) {
-                        getAuthTokenWithResponse(users[i], secondResponses[i]);
-                    }
+                    getAuthTokenWithResponse(users[idx], secondResponses[idx]);
 
                     // return result
-                    for (int i = 0; i < 2; i++) {
-                        callbacks[i].onAuthenticated(
-                                new TokenPair(accessTokens[i], refreshTokens[i]));
-                    }
+                    return new TokenPair(accessTokens[idx], refreshTokens[idx]);
                 });
 
         Bundle[] results = new Bundle[2];
@@ -201,7 +192,7 @@ public class OAuthAuthenticatorTest {
         }
 
         // there should be 2 api calls (2 accounts) for all 4 requests
-        verify(authCallback, times(2)).authenticate(anyString(), any());
+        verify(authCallback, times(2)).authenticate(anyString());
 
         for (int i = 0; i < 2; i++) {
             // should all wait asynchronously, thus the result be null
@@ -213,21 +204,18 @@ public class OAuthAuthenticatorTest {
         }
     }
 
-    private void withServiceResponse(Action1<AuthCallback.Callback> action) {
-        withServiceResponse((obj1, obj2) -> action.run(obj2));
+    private void withServiceResponse(Function0<TokenPair> action) throws IOException {
+        withServiceResponse((obj1) -> action.run());
     }
 
-    private void withServiceResponse(Action2<String, AuthCallback.Callback> action) {
+    private void withServiceResponse(Function1<String, TokenPair> action) throws IOException {
         Mockito.doAnswer(
                         invocation -> {
                             String refreshToken = (String) invocation.getArguments()[0];
-                            AuthCallback.Callback callback =
-                                    (AuthCallback.Callback) invocation.getArguments()[1];
-                            action.run(refreshToken, callback);
-                            return null;
+                            return action.run(refreshToken);
                         })
                 .when(authCallback)
-                .authenticate(anyString(), any(AuthCallback.Callback.class));
+                .authenticate(anyString());
     }
 
     private Bundle getAuthTokenWithResponse() {

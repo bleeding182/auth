@@ -26,9 +26,9 @@ import javax.inject.Inject;
  *
  * <p>Token refreshes will always be done <i>once</i>. Even if multiple threads request a new access
  * token simultaneously only one thread will refresh the token via {@link
- * com.davidmedenjak.auth.AuthCallback#authenticate(String,
- * com.davidmedenjak.auth.AuthCallback.Callback)} and propagate the result to the others. This is to
- * prevent problems with APIs that only allow one usage of refresh tokens and to reduce load.
+ * com.davidmedenjak.auth.AuthCallback#authenticate(String)} and propagate the result to the others.
+ * This is to prevent problems with APIs that only allow one usage of refresh tokens and to reduce
+ * load.
  *
  * <p><b>Usage</b>
  *
@@ -121,7 +121,8 @@ public class OAuthAuthenticator extends AbstractAccountAuthenticator {
             }
 
             final String refreshToken = accountManager.getPassword(account);
-            service.authenticate(refreshToken, new CallbackListener(account, authTokenType));
+            CallbackListener listener = new CallbackListener(account, authTokenType, service);
+            listener.refresh(refreshToken);
         } else {
             final Bundle resultBundle = createResultBundle(account, authToken);
             returnResultToQueuedResponses(account, (r) -> r.onResult(resultBundle));
@@ -235,18 +236,28 @@ public class OAuthAuthenticator extends AbstractAccountAuthenticator {
         private List<AccountAuthenticatorResponse> queue;
     }
 
-    private class CallbackListener implements AuthCallback.Callback {
+    private class CallbackListener {
 
         private final Account account;
         private final String authTokenType;
+        private AuthCallback service;
 
-        private CallbackListener(Account account, String authTokenType) {
+        private CallbackListener(Account account, String authTokenType, AuthCallback service) {
             this.account = account;
             this.authTokenType = authTokenType;
+            this.service = service;
         }
 
-        @Override
-        public void onAuthenticated(@NonNull TokenPair tokenPair) {
+        private void refresh(String refreshToken) {
+            try {
+                TokenPair result = service.authenticate(refreshToken);
+                onAuthenticated(result);
+            } catch (Exception e) {
+                onError(e);
+            }
+        }
+
+        private void onAuthenticated(@NonNull TokenPair tokenPair) {
             accountManager.setPassword(account, tokenPair.refreshToken);
             accountManager.setAuthToken(account, authTokenType, tokenPair.accessToken);
 
@@ -254,8 +265,7 @@ public class OAuthAuthenticator extends AbstractAccountAuthenticator {
             returnResultToQueuedResponses(account, (r) -> r.onResult(bundle));
         }
 
-        @Override
-        public void onError(@NonNull Throwable error) {
+        private void onError(@NonNull Throwable error) {
             int code = AccountManager.ERROR_CODE_NETWORK_ERROR;
             returnResultToQueuedResponses(account, (r) -> r.onError(code, error.getMessage()));
         }

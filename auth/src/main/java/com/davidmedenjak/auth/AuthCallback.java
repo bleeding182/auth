@@ -26,37 +26,12 @@ public interface AuthCallback {
     Intent getLoginIntent();
 
     /**
-     * Re-authenticate the user with the previously stored refresh token. After success or error you
-     * must call either {@link Callback#onAuthenticated(TokenPair)} or {@link
-     * Callback#onError(Throwable)}, otherwise your application might end up in a deadlock.
+     * Re-authenticate the user with the previously stored refresh token. Return the new refresh
+     * token or throw an exception if an error occurs.
      *
-     * @param refreshToken the refresh token stored from {@link TokenPair#refreshToken} at the last
-     *     login or refresh
-     * @param callback callback to the authenticator waiting for a new token pair. Either {@link
-     *     Callback#onAuthenticated(TokenPair)} or {@link Callback#onError(Throwable)} must be
-     *     called in any case to notify any waiting threads.
+     * @param refreshToken the refresh token stored from {@link TokenPair#refreshToken} at the time
+     *     of the last login or refresh
+     * @return the new TokenPair to use for future authentication
      */
-    void authenticate(@NonNull final String refreshToken, @NonNull final Callback callback);
-
-    /** A callback that notifies the Authenticator of an authentication success or failure. */
-    interface Callback {
-        /**
-         * Called after a token was successfully refreshed. This or {@link #onError(Throwable)} must
-         * be called after {@link AuthCallback#authenticate(String, Callback)} was called.
-         *
-         * @param tokenPair the pair of a new access and refresh token
-         * @see #onError(Throwable)
-         */
-        void onAuthenticated(@NonNull TokenPair tokenPair);
-
-        /**
-         * Called after the token refresh initiated by {@link AuthCallback#authenticate(String,
-         * Callback)} failed. This or {@link #onAuthenticated(TokenPair)} must be called to notify
-         * waiting threads.
-         *
-         * @param error the error encountered
-         * @see #onAuthenticated(TokenPair)
-         */
-        void onError(@NonNull Throwable error);
-    }
+    TokenPair authenticate(@NonNull final String refreshToken);
 }
