@@ -3,6 +3,7 @@ package com.davidmedenjak.auth;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 
+/** Used for logging bundle contents. */
 class BundleUtil {
 
     /**

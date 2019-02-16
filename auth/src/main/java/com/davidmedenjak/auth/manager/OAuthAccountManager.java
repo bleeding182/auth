@@ -28,7 +28,8 @@ public class OAuthAccountManager implements AccountAuthenticator {
     private final String accountType;
     private Account account;
 
-    public OAuthAccountManager(@NonNull String accountType, @NonNull AccountManager accountManager) {
+    public OAuthAccountManager(
+            @NonNull String accountType, @NonNull AccountManager accountManager) {
         this.accountType = accountType;
         this.accountManager = accountManager;
 
@@ -68,7 +69,8 @@ public class OAuthAccountManager implements AccountAuthenticator {
         return accountType;
     }
 
-    public void login(@NonNull String name, @NonNull TokenPair token, @NonNull AccountData accountData) {
+    public void login(
+            @NonNull String name, @NonNull TokenPair token, @NonNull AccountData accountData) {
         account = new Account(name, accountType);
 
         final String refreshToken = token.refreshToken;
@@ -131,13 +133,17 @@ public class OAuthAccountManager implements AccountAuthenticator {
     public void renameAccount(@NonNull String username) {
         if (!isLoggedIn()) return;
 
-        accountManager.renameAccount(account, username, future -> {
-            try {
-                account = future.getResult();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }, null);
+        accountManager.renameAccount(
+                account,
+                username,
+                future -> {
+                    try {
+                        account = future.getResult();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                },
+                null);
     }
 
     @Override

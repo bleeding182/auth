@@ -21,10 +21,20 @@ import java.util.List;
 import javax.inject.Inject;
 
 /**
- * A basic OAuth account manager wrapper that lets you login/logout a single user and store String
- * values.
+ * A basic implementation of an {@link AbstractAccountAuthenticator} to support OAuth use cases,
+ * where accounts get persisted with a refresh token as the {@code password}.
  *
- * <p>You need to provide a {@link AuthService} to link your app and api.
+ * <p>Token refreshes will always be done <i>once</i>. Even if multiple threads request a new access
+ * token simultaneously only one thread will refresh the token via {@link
+ * AuthService#authenticate(String, AuthService.Callback)} and propagate the result to the others.
+ * This is to prevent problems with APIs that only allow one usage of refresh tokens and to reduce
+ * load.
+ *
+ * <p><b>Usage</b>
+ *
+ * <p>To get started you can use {@link com.davidmedenjak.auth.manager.OAuthAccountManager
+ * OAuthAccountManager} that will wrap the framework {@link AccountManager} and provide a basic tool
+ * for login / logout and accessToken handling with a single account.
  *
  * @see AuthService
  */

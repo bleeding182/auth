@@ -130,7 +130,4 @@ public class OAuthAccountManagerTest {
 
         assertNotEquals(this.accessToken, newAccessToken);
     }
-
-
-
 }

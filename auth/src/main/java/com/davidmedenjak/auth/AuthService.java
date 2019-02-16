@@ -1,39 +1,26 @@
 package com.davidmedenjak.auth;
 
+import android.accounts.AccountManagerCallback;
+import android.app.Activity;
 import android.content.Intent;
+import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 /**
- * A service to link your app with {@link OAuthAuthenticator}. Once one or multiple users are logged
- * in this will be used to refresh access tokens when they get invalidated.
- *
- * <pre>{@code
- * private static class MyAuthService implements AuthService {
- *     private Context context;
- *     private MyAuthApi myAuthApi;
- *     @Override
- *     public Intent getLoginIntent() {
- *         return new Intent(context, LoginActivity.class);
- *     }
- *     @Override
- *     public void authenticate(
- *             @NonNull String refreshToken,
- *             @NonNull Callback callback) {
- *         myAuthApi.authenticate("refresh_token", refreshToken)
- *             .map((it) -> new TokenPair(it.accessToken, it.refreshToken))
- *             .subscribe(callback::onAuthenticated, callback::onError);
- *     }
- * }
- * }</pre>
+ * A service to link your app with {@link OAuthAuthenticator}. This is a callback to refresh your
+ * users access tokens or start a login flow.
  */
 public interface AuthService {
 
     /**
-     * Fetch an Intent to start your Login flow. This is used in the case that a user selects `Add
-     * Account` in the Account Settings. If `null` nothing will happen.
+     * Create an Intent to start your Login flow. This will be used if a user selects `Add Account`
+     * in the Account Settings, or if you call {@link
+     * android.accounts.AccountManager#addAccount(String, String, String[], Bundle, Activity,
+     * AccountManagerCallback, Handler)} from your code. If you return `null` nothing will happen.
      *
-     * @return e.g. new Intent(context, LoginActivity.class);
+     * @return an Intent that starts the flow to add an account, or {@code null}
      */
     @Nullable
     Intent getLoginIntent();
