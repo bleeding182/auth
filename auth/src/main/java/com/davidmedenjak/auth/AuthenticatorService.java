@@ -22,7 +22,7 @@ public abstract class AuthenticatorService extends Service {
     public void onCreate() {
         // Create a new authenticator object
         Log.v(TAG, "AuthenticatorService created");
-        authenticator = new OAuthAuthenticator(this, getAuthenticatorService());
+        authenticator = new OAuthAuthenticator(this, getAuthCallback());
     }
 
     @Override
@@ -37,5 +37,5 @@ public abstract class AuthenticatorService extends Service {
      * @return the authCallback
      * @see AuthCallback
      */
-    public abstract AuthCallback getAuthenticatorService();
+    public abstract AuthCallback getAuthCallback();
 }

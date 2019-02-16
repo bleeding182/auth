@@ -4,6 +4,7 @@ import com.davidmedenjak.redditsample.auth.api.model.TokenResponse;
 import com.davidmedenjak.redditsample.auth.api.model.User;
 
 import io.reactivex.Single;
+import retrofit2.Call;
 import retrofit2.http.Field;
 import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.GET;
@@ -23,7 +24,7 @@ public interface RedditAuthApi {
 
     @FormUrlEncoded
     @POST("v1/access_token")
-    Single<TokenResponse> authenticate(
+    Call<TokenResponse> authenticate(
             @Header("Authorization") String basicAuth,
             @Field("grant_type") String grantType,
             @Field("refresh_token") String refreshToken);

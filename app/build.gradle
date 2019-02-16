@@ -46,11 +46,11 @@ android {
 }
 
 dependencies {
-//    implementation project(':auth')
-//    implementation project(':auth-okhttp')
+    implementation project(':auth')
+    implementation project(':auth-okhttp')
 
-    implementation 'com.github.bleeding182.auth:auth:master'
-    implementation 'com.github.bleeding182.auth:auth-okhttp:master'
+//    implementation 'com.github.bleeding182.auth:auth:master'
+//    implementation 'com.github.bleeding182.auth:auth-okhttp:master'
 
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     androidTestImplementation('androidx.test.espresso:espresso-core:3.1.0', {
