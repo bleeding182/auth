@@ -27,8 +27,8 @@ public class RedditAuthenticatorService extends AuthenticatorService {
 
     @Override
     public void onCreate() {
-        inject();
         super.onCreate();
+        inject();
     }
 
     private void inject() {

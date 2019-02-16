@@ -20,14 +20,15 @@ public abstract class AuthenticatorService extends Service {
 
     @Override
     public void onCreate() {
-        // Create a new authenticator object
         Log.v(TAG, "AuthenticatorService created");
-        authenticator = new OAuthAuthenticator(this, getAuthCallback());
     }
 
     @Override
     public IBinder onBind(Intent intent) {
         Log.v(TAG, "onBind " + intent.toString());
+        if (authenticator == null) {
+            authenticator = new OAuthAuthenticator(this, getAuthCallback());
+        }
         return authenticator.getIBinder();
     }
 
