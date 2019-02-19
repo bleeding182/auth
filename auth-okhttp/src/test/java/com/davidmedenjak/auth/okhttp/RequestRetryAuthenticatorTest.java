@@ -34,20 +34,25 @@ public class RequestRetryAuthenticatorTest {
         accountAuthenticator = mock(AccountAuthenticator.class);
         requestRetryAuthenticator = new RequestRetryAuthenticator(accountAuthenticator);
 
-        Request request = new Request.Builder().url("http://localhost/")
-                .header("Authorization", "Bearer " + invalidAccessToken).build();
-        response = new Response.Builder()
-                .request(request)
-                .protocol(Protocol.HTTP_2)
-                .code(200)
-                .message("hi")
-                .build();
+        Request request =
+                new Request.Builder()
+                        .url("http://localhost/")
+                        .header("Authorization", "Bearer " + invalidAccessToken)
+                        .build();
+        response =
+                new Response.Builder()
+                        .request(request)
+                        .protocol(Protocol.HTTP_2)
+                        .code(200)
+                        .message("hi")
+                        .build();
     }
 
     @Test
     public void retryFailedRequestWithNewAuthToken() throws Exception {
         when(accountAuthenticator.getAccessToken()).thenAnswer(invocation -> invalidAccessToken);
-        when(accountAuthenticator.getNewAccessToken(invalidAccessToken)).thenAnswer(invocation -> validAccessToken);
+        when(accountAuthenticator.getNewAccessToken(invalidAccessToken))
+                .thenAnswer(invocation -> validAccessToken);
 
         Request request = requestRetryAuthenticator.authenticate(null, response);
 
@@ -61,11 +66,10 @@ public class RequestRetryAuthenticatorTest {
     @Test
     public void stopRetryAfterFailedAttempt() throws Exception {
         when(accountAuthenticator.getAccessToken()).thenAnswer(invocation -> invalidAccessToken);
-        when(accountAuthenticator.getNewAccessToken(invalidAccessToken)).thenAnswer(invocation -> validAccessToken);
+        when(accountAuthenticator.getNewAccessToken(invalidAccessToken))
+                .thenAnswer(invocation -> validAccessToken);
 
-        Response secondResponse = response.newBuilder()
-                .priorResponse(response)
-                .build();
+        Response secondResponse = response.newBuilder().priorResponse(response).build();
         Request request = requestRetryAuthenticator.authenticate(null, secondResponse);
 
         assertNull(request);
@@ -75,9 +79,14 @@ public class RequestRetryAuthenticatorTest {
     public void retryWithNoPriorAuth() throws Exception {
         when(accountAuthenticator.getAccessToken()).thenAnswer(invocation -> validAccessToken);
 
-        Response unauthenticatedResponse = response.newBuilder()
-                .request(response.request().newBuilder().removeHeader("Authorization").build())
-                .build();
+        Response unauthenticatedResponse =
+                response.newBuilder()
+                        .request(
+                                response.request()
+                                        .newBuilder()
+                                        .removeHeader("Authorization")
+                                        .build())
+                        .build();
         Request request = requestRetryAuthenticator.authenticate(null, unauthenticatedResponse);
 
         assertNotNull(request);

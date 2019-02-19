@@ -28,7 +28,6 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.robolectric.Shadows.shadowOf;
 
 @RunWith(RobolectricTestRunner.class)
 public class OAuthAuthenticatorTest {
@@ -38,7 +37,7 @@ public class OAuthAuthenticatorTest {
     private AccountManager am;
 
     private OAuthAuthenticator authenticator;
-    private AuthService authService;
+    private AuthCallback authCallback;
     private AccountAuthenticatorResponse response;
 
     @Before
@@ -46,18 +45,18 @@ public class OAuthAuthenticatorTest {
         am = AccountManager.get(RuntimeEnvironment.application);
 
         response = mock(AccountAuthenticatorResponse.class);
-        authService = mock(AuthService.class);
+        authCallback = mock(AuthCallback.class);
 
-        authenticator = new OAuthAuthenticator(RuntimeEnvironment.application, authService);
+        authenticator = new OAuthAuthenticator(RuntimeEnvironment.application, authCallback);
     }
 
     @Test
     public void accessTokenReturnedImmediately()
             throws NetworkErrorException, AuthenticatorException, OperationCanceledException,
                     IOException {
-        shadowOf(am).addAccount(account);
+        am.addAccountExplicitly(account, null, null);
         final String accessToken = "access1";
-        shadowOf(am).setAuthToken(account, tokenType, accessToken);
+        am.setAuthToken(account, tokenType, accessToken);
 
         // when
         Bundle result = getAuthTokenWithResponse();
@@ -71,10 +70,13 @@ public class OAuthAuthenticatorTest {
     public void errorOnInvalidRefreshToken()
             throws NetworkErrorException, AuthenticatorException, OperationCanceledException,
                     IOException {
-        shadowOf(am).addAccount(account);
-        shadowOf(am).setPassword(account, "invalid");
+        am.addAccountExplicitly(account, null, null);
+        am.setPassword(account, "invalid");
 
-        withServiceResponse(callback -> callback.onError(new Throwable()));
+        withServiceResponse(
+                callback -> {
+                    throw new RuntimeException();
+                });
 
         // when
         Bundle result = getAuthTokenWithResponse();
@@ -86,7 +88,7 @@ public class OAuthAuthenticatorTest {
 
     @Test
     public void noLoginIntentProvided() throws NetworkErrorException {
-        Mockito.doAnswer(invocation -> null).when(authService).getLoginIntent();
+        Mockito.doAnswer(invocation -> null).when(authCallback).getLoginIntent();
 
         Bundle result = authenticator.addAccount(response, account.type, tokenType, null, null);
     }
@@ -95,12 +97,12 @@ public class OAuthAuthenticatorTest {
     public void accessTokenReturnedAfterRefresh()
             throws NetworkErrorException, AuthenticatorException, OperationCanceledException,
                     IOException {
-        shadowOf(am).addAccount(account);
+        am.addAccountExplicitly(account, null, null);
         final String accessToken = "access1";
-        shadowOf(am).setPassword(account, "refresh1");
+        am.setPassword(account, "refresh1");
 
         TokenPair response = new TokenPair(accessToken, "refresh2");
-        withServiceResponse(callback -> callback.onAuthenticated(response));
+        withServiceResponse(callback -> response);
 
         // when
         Bundle result = getAuthTokenWithResponse();
@@ -114,9 +116,9 @@ public class OAuthAuthenticatorTest {
     public void multipleRequestsTriggerASingleRefresh()
             throws NetworkErrorException, AuthenticatorException, OperationCanceledException,
                     IOException {
-        shadowOf(am).addAccount(account);
+        am.addAccountExplicitly(account, null, null);
         final String accessToken = "access1";
-        shadowOf(am).setPassword(account, "refresh1");
+        am.setPassword(account, "refresh1");
 
         AccountAuthenticatorResponse secondResponse = mock(AccountAuthenticatorResponse.class);
 
@@ -132,7 +134,7 @@ public class OAuthAuthenticatorTest {
                     }
 
                     // return result
-                    cb.onAuthenticated(authResponse);
+                    return authResponse;
                 });
 
         // when
@@ -140,7 +142,7 @@ public class OAuthAuthenticatorTest {
 
         // then
         assertNull(result);
-        verify(authService, times(1)).authenticate(anyString(), any());
+        verify(authCallback, times(1)).authenticate(anyString());
         verify(response).onResult(argThat(new AuthResponseMatcher(accessToken)));
         verify(secondResponse).onResult(argThat(new AuthResponseMatcher(accessToken)));
     }
@@ -168,32 +170,20 @@ public class OAuthAuthenticatorTest {
                 };
 
         for (int i = 0; i < 2; i++) {
-            shadowOf(am).addAccount(users[i]);
-            shadowOf(am).setPassword(users[i], refreshTokens[i]);
+            am.addAccountExplicitly(users[i], null, null);
+            am.setPassword(users[i], refreshTokens[i]);
         }
 
         // when the callback is called we wait for 4 requests to be made before returning any result
-        final AuthService.Callback[] callbacks = new AuthService.Callback[2];
         withServiceResponse(
-                (refreshToken, callback) -> {
-                    if (refreshToken.equals(refreshTokens[0])) {
-                        // save callback until we finished requesting all 4 tokens
-                        callbacks[0] = callback;
-                        return;
-                    } else {
-                        callbacks[1] = callback;
-                    }
+                (refreshToken) -> {
+                    int idx = refreshToken.equals(refreshTokens[0]) ? 0 : 1;
 
                     // request seconds for every account
-                    for (int i = 0; i < 2; i++) {
-                        getAuthTokenWithResponse(users[i], secondResponses[i]);
-                    }
+                    getAuthTokenWithResponse(users[idx], secondResponses[idx]);
 
                     // return result
-                    for (int i = 0; i < 2; i++) {
-                        callbacks[i].onAuthenticated(
-                                new TokenPair(accessTokens[i], refreshTokens[i]));
-                    }
+                    return new TokenPair(accessTokens[idx], refreshTokens[idx]);
                 });
 
         Bundle[] results = new Bundle[2];
@@ -202,7 +192,7 @@ public class OAuthAuthenticatorTest {
         }
 
         // there should be 2 api calls (2 accounts) for all 4 requests
-        verify(authService, times(2)).authenticate(anyString(), any());
+        verify(authCallback, times(2)).authenticate(anyString());
 
         for (int i = 0; i < 2; i++) {
             // should all wait asynchronously, thus the result be null
@@ -214,21 +204,18 @@ public class OAuthAuthenticatorTest {
         }
     }
 
-    private void withServiceResponse(Action1<AuthService.Callback> action) {
-        withServiceResponse((obj1, obj2) -> action.run(obj2));
+    private void withServiceResponse(Function0<TokenPair> action) throws IOException {
+        withServiceResponse((obj1) -> action.run());
     }
 
-    private void withServiceResponse(Action2<String, AuthService.Callback> action) {
+    private void withServiceResponse(Function1<String, TokenPair> action) throws IOException {
         Mockito.doAnswer(
                         invocation -> {
                             String refreshToken = (String) invocation.getArguments()[0];
-                            AuthService.Callback callback =
-                                    (AuthService.Callback) invocation.getArguments()[1];
-                            action.run(refreshToken, callback);
-                            return null;
+                            return action.run(refreshToken);
                         })
-                .when(authService)
-                .authenticate(anyString(), any(AuthService.Callback.class));
+                .when(authCallback)
+                .authenticate(anyString());
     }
 
     private Bundle getAuthTokenWithResponse() {

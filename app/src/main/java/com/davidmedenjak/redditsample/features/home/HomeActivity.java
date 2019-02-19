@@ -5,26 +5,31 @@ import android.accounts.AccountManager;
 import android.accounts.OnAccountsUpdateListener;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.DividerItemDecoration;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.davidmedenjak.auth.manager.OAuthAccountManager;
 import com.davidmedenjak.redditsample.R;
+import com.davidmedenjak.redditsample.app.App;
 import com.davidmedenjak.redditsample.auth.login.LoginActivity;
-import com.davidmedenjak.redditsample.common.BaseActivity;
 import com.davidmedenjak.redditsample.features.latestcomments.LatestCommentsActivity;
 
-public class HomeActivity extends BaseActivity implements OnAccountsUpdateListener {
+public class HomeActivity extends AppCompatActivity implements OnAccountsUpdateListener {
 
+    private OAuthAccountManager oauthAccountManager;
     private AccountManager accountManager;
     private RedditAccountAdapter adapter;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        this.accountManager = AccountManager.get(this);
-
         setContentView(R.layout.activity_home);
+
+        inject();
 
         adapter =
                 new RedditAccountAdapter(
@@ -34,12 +39,25 @@ public class HomeActivity extends BaseActivity implements OnAccountsUpdateListen
         RecyclerView recyclerView = findViewById(R.id.recycler_view);
         recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.addItemDecoration(
+                new DividerItemDecoration(this, DividerItemDecoration.VERTICAL));
+    }
+
+    private void inject() {
+        this.accountManager = AccountManager.get(this);
+        App app = (App) getApplication();
+        this.oauthAccountManager = app.getAccountManager();
     }
 
     @Override
     protected void onStart() {
         super.onStart();
         accountManager.addOnAccountsUpdatedListener(this, null, true);
+
+        // not logged in - start login flow
+        if (!oauthAccountManager.isLoggedIn()) {
+            startActivity(new Intent(this, LoginActivity.class));
+        }
     }
 
     @Override
@@ -50,9 +68,6 @@ public class HomeActivity extends BaseActivity implements OnAccountsUpdateListen
 
     @Override
     public void onAccountsUpdated(Account[] accounts) {
-        if(accounts.length == 0) {
-            startActivity(new Intent(this, LoginActivity.class));
-        }
         adapter.updateAccounts(accounts);
     }
 }

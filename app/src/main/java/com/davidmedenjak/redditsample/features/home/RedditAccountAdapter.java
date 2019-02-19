@@ -3,14 +3,14 @@ package com.davidmedenjak.redditsample.features.home;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.content.Context;
-import android.support.v7.widget.RecyclerView;
+
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import com.davidmedenjak.redditsample.R;
-
-import java.util.function.Function;
 
 class RedditAccountAdapter extends RecyclerView.Adapter<AccountViewHolder> {
 
@@ -28,8 +28,9 @@ class RedditAccountAdapter extends RecyclerView.Adapter<AccountViewHolder> {
         notifyDataSetChanged();
     }
 
+    @NonNull
     @Override
-    public AccountViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    public AccountViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view =
                 LayoutInflater.from(parent.getContext())
                         .inflate(R.layout.item_account_view, parent, false);
@@ -37,7 +38,7 @@ class RedditAccountAdapter extends RecyclerView.Adapter<AccountViewHolder> {
     }
 
     @Override
-    public void onBindViewHolder(AccountViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull AccountViewHolder holder, int position) {
         Account account = accounts[position];
         holder.name.setText(account.name);
         long linkKarma = Long.parseLong(accountManager.getUserData(account, "link_karma"));

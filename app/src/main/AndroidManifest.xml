@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="com.davidmedenjak.redditsample">
+    package="com.davidmedenjak.redditsample">
 
-    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:name=".app.App"
@@ -10,50 +10,61 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/SplashScreen">
+        android:theme="@style/AppTheme">
 
-        <meta-data android:name="oauth-account.type" android:value="@string/account_type" />
+        <!-- region >> Auth Configuration <<< -->
 
+        <!-- Account type to use with OAuthAccountManager -->
+        <meta-data
+            android:name="oauth-account.type"
+            android:value="@string/account_type" />
+
+        <!-- Service to register the authenticator -->
+        <service
+            android:name=".auth.RedditAuthenticatorService"
+            android:permission="android.permission.ACCOUNT_MANAGER">
+            <intent-filter>
+                <action android:name="android.accounts.AccountAuthenticator" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.accounts.AccountAuthenticator"
+                android:resource="@xml/authenticator" />
+        </service>
+        <!-- endregion -->
+
+
+        <!-- region >>> App Sample Screens <<< -->
         <activity
             android:name=".features.home.HomeActivity"
             android:launchMode="singleTop">
             <intent-filter>
-                <category android:name="android.intent.category.LAUNCHER"/>
-                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.DEFAULT" />
 
-                <action android:name="android.intent.action.MAIN"/>
+                <action android:name="android.intent.action.MAIN" />
             </intent-filter>
         </activity>
 
         <activity
             android:name=".features.latestcomments.LatestCommentsActivity"
-            android:launchMode="singleTop"/>
+            android:launchMode="singleTop" />
 
         <activity
             android:name=".auth.login.LoginActivity"
             android:launchMode="singleInstance">
             <intent-filter>
-                <action android:name="android.intent.action.VIEW"/>
+                <action android:name="android.intent.action.VIEW" />
 
-                <category android:name="android.intent.category.DEFAULT"/>
-                <category android:name="android.intent.category.BROWSABLE"/>
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
 
                 <!-- register for oauth callback -->
                 <data
                     android:host="redditsample.davidmedenjak.com"
-                    android:scheme="redirect"/>
+                    android:scheme="redirect" />
             </intent-filter>
         </activity>
-
-        <service
-            android:name=".auth.RedditAuthenticatorService"
-            android:permission="android.permission.ACCOUNT_MANAGER">
-            <intent-filter>
-                <action android:name="android.accounts.AccountAuthenticator"/>
-            </intent-filter>
-            <meta-data
-                android:name="android.accounts.AccountAuthenticator"
-                android:resource="@xml/authenticator"/>
-        </service>
+        <!-- endregion -->
     </application>
 </manifest>

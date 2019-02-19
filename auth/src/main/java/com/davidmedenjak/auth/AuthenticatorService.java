@@ -6,7 +6,12 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.util.Log;
 
-/** A basic Service implementation to use with {@link OAuthAuthenticator}. */
+/**
+ * A Service used to register {@link OAuthAuthenticator} with the Android framework.
+ *
+ * <p>You need to provide an {@link AuthCallback} that the authenticator can use for callbacks to
+ * your app.
+ */
 public abstract class AuthenticatorService extends Service {
 
     private static final String TAG = "AuthenticatorService";
@@ -15,22 +20,23 @@ public abstract class AuthenticatorService extends Service {
 
     @Override
     public void onCreate() {
-        // Create a new authenticator object
         Log.v(TAG, "AuthenticatorService created");
-        authenticator = new OAuthAuthenticator(this, getAuthenticatorService());
     }
 
     @Override
     public IBinder onBind(Intent intent) {
         Log.v(TAG, "onBind " + intent.toString());
+        if (authenticator == null) {
+            authenticator = new OAuthAuthenticator(this, getAuthCallback());
+        }
         return authenticator.getIBinder();
     }
 
     /**
-     * Provide an AuthService to be used with the {@link OAuthAuthenticator}
+     * Provide an AuthCallback to be used with the {@link OAuthAuthenticator}
      *
-     * @return the authService
-     * @see AuthService
+     * @return the authCallback
+     * @see AuthCallback
      */
-    public abstract AuthService getAuthenticatorService();
+    public abstract AuthCallback getAuthCallback();
 }

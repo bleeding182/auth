@@ -6,8 +6,8 @@ Provides a tested implementation for the Android Account Framework for you to ge
 
 `SharedPreferences` work well and will be good enough for most projects, but there are 2 edge cases that don't always work as expected.
 
-1. _Clear Data_ will remove any app data&mdash;including your OAuth tokens!
-2. When triggering a token refresh after an access token has expired some APIs invalidate your refresh token. When refreshing the token at the same time from multiple threads you might receive 401 on your later requests, possibly logging out your user. Even if your API can handle multiple requests, this library will only send _one_ request at a time.
+1. _Clear Data_ in the apps settings will remove any app data&mdash;including your OAuth tokens!
+2. When triggering a token refresh after an access token has expired some APIs invalidate your refresh token (one time use). When refreshing the token at the same time from multiple threads you might receive 401 on your later requests, possibly logging out your user. Even if your API can handle multiple requests, this library will only ever send _one_ token refresh request at a time.
 
 This library will help provide a stable user experience and may help you save time while testing since you can clean your app data without having to login again.
 
@@ -15,24 +15,25 @@ This library will help provide a stable user experience and may help you save ti
 
 Implementing the Account Manager Framework needs a lot of boilerplate and is a little confusing. To make it more accessible this library provides support for a basic OAuth use case.
 
-Additionally this should be an example for you on how to implement your own Authenticator, as the internet is somewhat lacking on that.
+Additionally this is intended as an example for you on how to implement your own Authenticator, as the internet is somewhat lacking on that.
 
 ### Features
 
-As already hinted above, this library implements (some of) the boilerplate needed to use the Authenticator Framework.
-The library includes a basic `OAuthAccountManager` that can be used as a convenience for a single-user application.
+As already mentioned above, this library implements (some of) the boilerplate needed to use the Authenticator Framework. The core of it is the `OAuthAuthenticator` that will be registered on the Android framework and supports single or multi-user applications.
 
-Further, when using OkHttp, you can use `RequestAuthInterceptor` and `RequestRetryAuthenticator` to authenticate your HTTP requests.
+For convenience this library includes a basic `OAuthAccountManager` that wraps the framework `AccountManager` and offers a simple single user experience (login, logout, isLoggedIn). This account manager when used with OkHttp also offers `RequestAuthInterceptor` and `RequestRetryAuthenticator` which will add the `Authorization` headers to your HTTP requests and refresh the access token when it becomes invalid.
+
+There is currently no "wrapper" for multi-user support. If you need this make sure to check the above mentioned classes and continue from there!
 
 ### Usage / Setup
 
-There is an example project in the `/app` folder that uses the Reddit API that shows how this could be used. You have to add your own `CLIENT_ID` if you want to run the example!
+There is an example project in the `/app` folder that uses the Reddit API and shows how the library could be used. You have to add your own `CLIENT_ID` if you want to run the example! Take not of the _two_ Retrofit services used (one without authentication, the other one with auth headers) to prevent deadlocks when refreshing the token.
 
-Sadly there is still some boilerplate to include as you can see next.
+Sadly you will still need to add _some_ boilerplate as you can see next.
 
 #### Gradle
 
-It is currently published on a simple bintray repository, so add the following at the end of your repositories.
+The library is currently published on my bintray repository, so add the following to the end of your repositories in your root `build.gradle` file.
 
     repositories {
         maven {
@@ -42,24 +43,26 @@ It is currently published on a simple bintray repository, so add the following a
 
 Then include the packages
 
-    implementation 'com.davidmedenjak.auth:auth:0.1.0'
-    implementation 'com.davidmedenjak.auth:auth-okhttp:0.1.0'
+    implementation 'com.davidmedenjak.auth:auth:0.3.0'
+    implementation 'com.davidmedenjak.auth:auth-okhttp:0.3.0'
 
-_The library is currently pre-release. I will publish the artifacts on jcenter/maven central once I have some feedback and am happy with the initial release_
+_The library is currently [pre-release](https://semver.org/#spec-item-4). I will publish the artifacts on jcenter/maven central once I have some feedback and am happy with the API_
 
 #### Basic Setup
 
-You start by extending `AuthenticatorService` and return an implementation of `AuthService` that enables token refreshing. In your `AuthService` you call your API and trade a refresh token for a new access token.
+You start by extending `AuthenticatorService` and return an implementation of `AuthCallback` that enables token refreshing. In your `AuthCallback` you should call your API and trade the refresh token for a new access token.
 
     public class RedditAuthenticatorService extends AuthenticatorService {
     
+        private RedditAuthApi authApiService; // Retrofit service
+
         @Override
-        public AuthService getAuthenticatorService() {
-            return new RedditAuthService(this, getApiService());
+        public AuthCallback getAuthCallback() {
+            return new RedditAuthCallback(this, authApiService);
         }
     }
     
-Then you add the service to your manifest.
+Then you add the service to your manifest, registering the AccountAuthenticator.
 
     <service
         android:name=".auth.RedditAuthenticatorService"
@@ -72,7 +75,7 @@ Then you add the service to your manifest.
             android:resource="@xml/authenticator"/>
     </service>
     
-After which you have to create a config file to set up your Authenticator. An example for `res/xml/authenticator` can be seen here:
+Next you create the xml resource that contains your Authenticators configuration. An example for `res/xml/authenticator` can be seen here:
 
     <?xml version="1.0" encoding="utf-8"?>
     <account-authenticator
@@ -88,11 +91,11 @@ If you want to use the `OAuthAccountManager` for convenience you should add your
         <meta-data android:name="oauth-account.type" android:value="@string/account_type" />
     </application>
         
-And that's the basic setup!
+And that's the basic setup! Be sure to check the example for more information.
 
-#### OkHttp
+#### OAuthAccountManager - OkHttp
 
-The `auth-okhttp` package contains an interceptor and an authenticator for OkHttp that will add a `Authorization: Bearer {{accessToken}}` header to your api calls. To set it up you can use `OAuthAccountManager` that will fetch the token from the Account Authenticator!
+The `auth-okhttp` package contains an interceptor and an authenticator for OkHttp that will add a `Authorization: Bearer {{accessToken}}` header to your api calls. To set it up you can use `OAuthAccountManager` that will fetch the token from the Account Authenticator, or alternatively implement the interface yourself.
 
     AccountAuthenticator authenticator = OAuthAccountManager.fromContext(this);
     OkHttpClient okHttpClient =

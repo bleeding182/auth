@@ -2,15 +2,14 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion project.compileSdkVersion
-    buildToolsVersion project.buildToolsVersion
 
     defaultConfig {
         applicationId "com.davidmedenjak.redditsample"
         minSdkVersion 16
-        targetSdkVersion 27
+        targetSdkVersion 28
         versionCode 1
         versionName "1.0"
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
         resValue "string", "account_type", "com.davidmedenjak.redditsample"
 
@@ -36,7 +35,7 @@ repositories {
 
 ext {
     retrofit = "2.3.0"
-    okhttp = "3.9.0"
+    okhttp = "3.12.0"
     supportLibrary = "26.1.0"
 }
 
@@ -47,18 +46,18 @@ android {
 }
 
 dependencies {
-//    implementation project(':auth')
-//    implementation project(':auth-okhttp')
+    implementation project(':auth')
+    implementation project(':auth-okhttp')
 
-    implementation 'com.github.bleeding182.auth:auth:master'
-    implementation 'com.github.bleeding182.auth:auth-okhttp:master'
+//    implementation 'com.github.bleeding182.auth:auth:master'
+//    implementation 'com.github.bleeding182.auth:auth-okhttp:master'
 
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    androidTestImplementation('com.android.support.test.espresso:espresso-core:3.0.1', {
+    androidTestImplementation('androidx.test.espresso:espresso-core:3.1.0', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    implementation "com.android.support:appcompat-v7:$supportLibrary"
-    implementation "com.android.support:recyclerview-v7:$supportLibrary"
+    implementation 'androidx.appcompat:appcompat:1.0.2'
+    implementation 'androidx.recyclerview:recyclerview:1.0.0'
 
     implementation "com.squareup.retrofit2:retrofit:$retrofit"
     implementation "com.squareup.retrofit2:adapter-rxjava2:$retrofit"

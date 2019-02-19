@@ -1,6 +1,6 @@
 package com.davidmedenjak.auth;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import com.davidmedenjak.auth.manager.OAuthAccountManager;
 

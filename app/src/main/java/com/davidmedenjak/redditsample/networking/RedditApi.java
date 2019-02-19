@@ -9,7 +9,7 @@ import io.reactivex.Observable;
 import retrofit2.http.GET;
 import retrofit2.http.Path;
 
-public interface RedditService {
+public interface RedditApi {
 
     @GET("/user/{username}/comments")
     Observable<Response<Listing<Content<Comment>>>> fetchComments(
