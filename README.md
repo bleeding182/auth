@@ -51,58 +51,65 @@ _The library is currently [pre-release](https://semver.org/#spec-item-4). I will
 #### Basic Setup
 
 You start by extending `AuthenticatorService` and return an implementation of `AuthCallback` that enables token refreshing. In your `AuthCallback` you should call your API and trade the refresh token for a new access token.
+```java
+public class RedditAuthenticatorService extends AuthenticatorService {
 
-    public class RedditAuthenticatorService extends AuthenticatorService {
-    
-        private RedditAuthApi authApiService; // Retrofit service
+    private RedditAuthApi authApiService; // Retrofit service
 
-        @Override
-        public AuthCallback getAuthCallback() {
-            return new RedditAuthCallback(this, authApiService);
-        }
+    @Override
+    public AuthCallback getAuthCallback() {
+        return new RedditAuthCallback(this, authApiService);
     }
+}
+```    
     
 Then you add the service to your manifest, registering the AccountAuthenticator.
-
-    <service
-        android:name=".auth.RedditAuthenticatorService"
-        android:permission="android.permission.ACCOUNT_MANAGER">
-        <intent-filter>
-            <action android:name="android.accounts.AccountAuthenticator"/>
-        </intent-filter>
-        <meta-data
-            android:name="android.accounts.AccountAuthenticator"
-            android:resource="@xml/authenticator"/>
-    </service>
+```xml
+<service
+    android:name=".auth.RedditAuthenticatorService"
+    android:permission="android.permission.ACCOUNT_MANAGER">
+    <intent-filter>
+        <action android:name="android.accounts.AccountAuthenticator"/>
+    </intent-filter>
+    <meta-data
+        android:name="android.accounts.AccountAuthenticator"
+        android:resource="@xml/authenticator"/>
+</service>
+```
     
 Next you create the xml resource that contains your Authenticators configuration. An example for `res/xml/authenticator` can be seen here:
-
-    <?xml version="1.0" encoding="utf-8"?>
-    <account-authenticator
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        android:accountType="@string/account_type"
-        android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
-        android:smallIcon="@mipmap/ic_launcher"/>
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<account-authenticator
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accountType="@string/account_type"
+    android:icon="@mipmap/ic_launcher"
+    android:label="@string/app_name"
+    android:smallIcon="@mipmap/ic_launcher"/>
+```
         
 If you want to use the `OAuthAccountManager` for convenience you should add your account type to your manifest as well. Alternatively you can supply it at runtime.
-
-    <application>
-        <meta-data android:name="oauth-account.type" android:value="@string/account_type" />
-    </application>
+```xml
+<application>
+    <meta-data android:name="oauth-account.type" android:value="@string/account_type" />
+</application>
+```
         
 And that's the basic setup! Be sure to check the example for more information.
 
 #### OAuthAccountManager - OkHttp
 
 The `auth-okhttp` package contains an interceptor and an authenticator for OkHttp that will add a `Authorization: Bearer {{accessToken}}` header to your api calls. To set it up you can use `OAuthAccountManager` that will fetch the token from the Account Authenticator, or alternatively implement the interface yourself.
+```java
+AccountAuthenticator authenticator = OAuthAccountManager.fromContext(this);
+OkHttpClient okHttpClient =
+        new OkHttpClient.Builder()
+                .authenticator(new RequestRetryAuthenticator(authenticator))
+                .addInterceptor(new RequestAuthInterceptor(authenticator))
+                .build();
 
-    AccountAuthenticator authenticator = OAuthAccountManager.fromContext(this);
-    OkHttpClient okHttpClient =
-            new OkHttpClient.Builder()
-                    .authenticator(new RequestRetryAuthenticator(authenticator))
-                    .addInterceptor(new RequestAuthInterceptor(authenticator))
-                    .build();
+```
+
                     
 ### Contributing
 
