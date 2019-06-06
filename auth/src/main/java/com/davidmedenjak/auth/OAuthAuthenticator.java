@@ -8,17 +8,19 @@ import android.accounts.NetworkErrorException;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
 import javax.inject.Inject;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 /**
  * A basic implementation of an {@link AbstractAccountAuthenticator} to support OAuth use cases,
@@ -252,7 +254,9 @@ public class OAuthAuthenticator extends AbstractAccountAuthenticator {
             try {
                 TokenPair result = service.authenticate(refreshToken);
                 onAuthenticated(result);
-            } catch (Exception e) {
+            } catch (IOException e) {
+                onError(TokenRefreshError.NETWORK);
+            } catch (TokenRefreshError e) {
                 onError(e);
             }
         }
@@ -265,9 +269,8 @@ public class OAuthAuthenticator extends AbstractAccountAuthenticator {
             returnResultToQueuedResponses(account, (r) -> r.onResult(bundle));
         }
 
-        private void onError(@NonNull Throwable error) {
-            int code = AccountManager.ERROR_CODE_NETWORK_ERROR;
-            returnResultToQueuedResponses(account, (r) -> r.onError(code, error.getMessage()));
+        private void onError(@NonNull TokenRefreshError error) {
+            returnResultToQueuedResponses(account, (r) -> r.onError(error.getCode(), error.getErrorMessage()));
         }
     }
 }

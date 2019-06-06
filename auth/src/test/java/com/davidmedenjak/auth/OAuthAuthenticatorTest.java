@@ -16,15 +16,16 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -41,7 +42,7 @@ public class OAuthAuthenticatorTest {
     private AccountAuthenticatorResponse response;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         am = AccountManager.get(RuntimeEnvironment.application);
 
         response = mock(AccountAuthenticatorResponse.class);
@@ -51,9 +52,7 @@ public class OAuthAuthenticatorTest {
     }
 
     @Test
-    public void accessTokenReturnedImmediately()
-            throws NetworkErrorException, AuthenticatorException, OperationCanceledException,
-                    IOException {
+    public void accessTokenReturnedImmediately() {
         am.addAccountExplicitly(account, null, null);
         final String accessToken = "access1";
         am.setAuthToken(account, tokenType, accessToken);
@@ -67,15 +66,13 @@ public class OAuthAuthenticatorTest {
     }
 
     @Test
-    public void errorOnInvalidRefreshToken()
-            throws NetworkErrorException, AuthenticatorException, OperationCanceledException,
-                    IOException {
+    public void errorOnInvalidRefreshToken() throws IOException, TokenRefreshError {
         am.addAccountExplicitly(account, null, null);
         am.setPassword(account, "invalid");
 
         withServiceResponse(
                 callback -> {
-                    throw new RuntimeException();
+                    throw new UnknownHostException();
                 });
 
         // when
@@ -83,7 +80,7 @@ public class OAuthAuthenticatorTest {
 
         // then
         assertNull(result);
-        verify(response).onError(anyInt(), any());
+        verify(response).onError(eq(AccountManager.ERROR_CODE_NETWORK_ERROR), any());
     }
 
     @Test
@@ -95,8 +92,8 @@ public class OAuthAuthenticatorTest {
 
     @Test
     public void accessTokenReturnedAfterRefresh()
-            throws NetworkErrorException, AuthenticatorException, OperationCanceledException,
-                    IOException {
+            throws AuthenticatorException, OperationCanceledException, IOException,
+                    TokenRefreshError {
         am.addAccountExplicitly(account, null, null);
         final String accessToken = "access1";
         am.setPassword(account, "refresh1");
@@ -113,9 +110,7 @@ public class OAuthAuthenticatorTest {
     }
 
     @Test
-    public void multipleRequestsTriggerASingleRefresh()
-            throws NetworkErrorException, AuthenticatorException, OperationCanceledException,
-                    IOException {
+    public void multipleRequestsTriggerASingleRefresh() throws IOException, TokenRefreshError {
         am.addAccountExplicitly(account, null, null);
         final String accessToken = "access1";
         am.setPassword(account, "refresh1");
@@ -148,9 +143,7 @@ public class OAuthAuthenticatorTest {
     }
 
     @Test
-    public void multipleUserRequestsTriggerRunConcurrently()
-            throws NetworkErrorException, AuthenticatorException, OperationCanceledException,
-                    IOException {
+    public void multipleUserRequestsTriggerRunConcurrently() throws IOException, TokenRefreshError {
 
         // given some complicated setup... simulate "concurrency" :/
         Account[] users =
@@ -204,11 +197,34 @@ public class OAuthAuthenticatorTest {
         }
     }
 
-    private void withServiceResponse(Function0<TokenPair> action) throws IOException {
+    @Test
+    public void returnCustomError() throws IOException, TokenRefreshError {
+        am.addAccountExplicitly(account, null, null);
+        am.setPassword(account, "invalid");
+
+        final int errCode = AccountManager.ERROR_CODE_BAD_AUTHENTICATION;
+        final String errMessage = "unauthorized";
+
+        withServiceResponse(
+                callback -> {
+                    throw new TokenRefreshError(errCode, errMessage);
+                });
+
+        // when
+        Bundle result = getAuthTokenWithResponse();
+
+        // then
+        assertNull(result);
+        verify(response).onError(errCode, errMessage);
+    }
+
+    private void withServiceResponse(Function0<TokenPair> action)
+            throws TokenRefreshError, IOException {
         withServiceResponse((obj1) -> action.run());
     }
 
-    private void withServiceResponse(Function1<String, TokenPair> action) throws IOException {
+    private void withServiceResponse(Function1<String, TokenPair> action)
+            throws TokenRefreshError, IOException {
         Mockito.doAnswer(
                         invocation -> {
                             String refreshToken = (String) invocation.getArguments()[0];
