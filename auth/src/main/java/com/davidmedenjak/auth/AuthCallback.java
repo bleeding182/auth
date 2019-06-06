@@ -6,10 +6,10 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 
+import java.io.IOException;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
-import java.io.IOException;
 
 /**
  * A callback to link your app with {@link OAuthAuthenticator}. This is used to refresh your users
@@ -34,8 +34,12 @@ public interface AuthCallback {
      *
      * @param refreshToken the refresh token stored from {@link TokenPair#refreshToken} at the time
      *     of the last login or refresh
-     * @throws IOException when there is an error refreshing the token
+     * @throws IOException when there is an error refreshing the token. This defaults to {@link
+     *     TokenRefreshError#NETWORK}.
+     * @throws TokenRefreshError when there is an error refreshing the token to provide a better
+     *     error to the listeners.
      * @return the new TokenPair to use for future authentication
      */
-    TokenPair authenticate(@NonNull final String refreshToken) throws IOException;
+    TokenPair authenticate(@NonNull final String refreshToken)
+            throws IOException, TokenRefreshError;
 }
