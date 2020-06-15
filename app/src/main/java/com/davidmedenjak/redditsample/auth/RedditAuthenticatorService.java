@@ -6,6 +6,7 @@ import android.util.Base64;
 
 import androidx.annotation.NonNull;
 
+import androidx.annotation.Nullable;
 import com.davidmedenjak.auth.AuthCallback;
 import com.davidmedenjak.auth.AuthenticatorService;
 import com.davidmedenjak.auth.TokenPair;
@@ -59,7 +60,7 @@ public class RedditAuthenticatorService extends AuthenticatorService {
         }
 
         @Override
-        public TokenPair authenticate(@NonNull String refreshToken) throws IOException {
+        public TokenPair authenticate(@Nullable String refreshToken) throws IOException {
             String clientId = getBasicAuthForClientId();
             String grantType = "refresh_token";
 
