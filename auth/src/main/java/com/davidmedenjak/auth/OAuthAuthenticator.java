@@ -233,7 +233,7 @@ public class OAuthAuthenticator extends AbstractAccountAuthenticator {
         void returnResult(AccountAuthenticatorResponse response);
     }
 
-    private class FetchingAuthModel {
+    private static class FetchingAuthModel {
         private boolean fetchingToken = false;
         private List<AccountAuthenticatorResponse> queue;
     }
