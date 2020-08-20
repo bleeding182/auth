@@ -11,6 +11,9 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,9 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 
 import javax.inject.Inject;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 /**
  * A basic implementation of an {@link AbstractAccountAuthenticator} to support OAuth use cases,
@@ -123,7 +123,7 @@ public class OAuthAuthenticator extends AbstractAccountAuthenticator {
             }
 
             final String refreshToken = accountManager.getPassword(account);
-            CallbackListener listener = new CallbackListener(account, authTokenType, service);
+            final CallbackListener listener = new CallbackListener(account, authTokenType, service);
             listener.refresh(refreshToken);
         } else {
             final Bundle resultBundle = createResultBundle(account, authToken);
@@ -233,7 +233,7 @@ public class OAuthAuthenticator extends AbstractAccountAuthenticator {
         void returnResult(AccountAuthenticatorResponse response);
     }
 
-    private class FetchingAuthModel {
+    private static class FetchingAuthModel {
         private boolean fetchingToken = false;
         private List<AccountAuthenticatorResponse> queue;
     }
@@ -250,9 +250,17 @@ public class OAuthAuthenticator extends AbstractAccountAuthenticator {
             this.service = service;
         }
 
-        private void refresh(String refreshToken) {
+        private void refresh(@Nullable String refreshToken) {
+            if (refreshToken == null) {
+                TokenRefreshError error =
+                        new TokenRefreshError(
+                                AccountManager.ERROR_CODE_CANCELED,
+                                "Invalid stored refresh token `null`");
+                onError(error);
+                return;
+            }
             try {
-                TokenPair result = service.authenticate(refreshToken);
+                final TokenPair result = service.authenticate(refreshToken);
                 onAuthenticated(result);
             } catch (IOException e) {
                 onError(TokenRefreshError.NETWORK);
@@ -270,7 +278,8 @@ public class OAuthAuthenticator extends AbstractAccountAuthenticator {
         }
 
         private void onError(@NonNull TokenRefreshError error) {
-            returnResultToQueuedResponses(account, (r) -> r.onError(error.getCode(), error.getErrorMessage()));
+            returnResultToQueuedResponses(
+                    account, (r) -> r.onError(error.getCode(), error.getErrorMessage()));
         }
     }
 }

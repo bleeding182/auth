@@ -40,6 +40,6 @@ public interface AuthCallback {
      *     error to the listeners.
      * @return the new TokenPair to use for future authentication
      */
-    TokenPair authenticate(@NonNull final String refreshToken)
+    @NonNull TokenPair authenticate(@NonNull final String refreshToken)
             throws IOException, TokenRefreshError;
 }

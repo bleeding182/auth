@@ -58,6 +58,7 @@ public class RedditAuthenticatorService extends AuthenticatorService {
             return new Intent(context, LoginActivity.class);
         }
 
+        @NonNull
         @Override
         public TokenPair authenticate(@NonNull String refreshToken) throws IOException {
             String clientId = getBasicAuthForClientId();

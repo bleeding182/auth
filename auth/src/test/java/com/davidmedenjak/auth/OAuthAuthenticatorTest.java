@@ -218,6 +218,28 @@ public class OAuthAuthenticatorTest {
         verify(response).onError(errCode, errMessage);
     }
 
+    @Test
+    public void cancelWithNullRefreshToken() throws IOException, TokenRefreshError {
+        am.addAccountExplicitly(account, null, null);
+
+        // `null` password / refresh token
+        am.setPassword(account, null);
+
+        final int errCode = AccountManager.ERROR_CODE_CANCELED;
+
+        withServiceResponse(
+                callback -> {
+                    throw new IllegalStateException("should not run");
+                });
+
+        // when
+        Bundle result = getAuthTokenWithResponse();
+
+        // then
+        assertNull(result);
+        verify(response).onError(eq(errCode), anyString());
+    }
+
     private void withServiceResponse(Function0<TokenPair> action)
             throws TokenRefreshError, IOException {
         withServiceResponse((obj1) -> action.run());
