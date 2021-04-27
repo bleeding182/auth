@@ -103,7 +103,6 @@ public class OAuthAccountManagerTest {
     }
 
     @Test
-    @Ignore("Robolectric seems not to implement this correctly")
     @Config(sdk = Build.VERSION_CODES.LOLLIPOP_MR1)
     public void logout() {
         accountManager.login(account.name, tokens, AccountData.EMPTY);
