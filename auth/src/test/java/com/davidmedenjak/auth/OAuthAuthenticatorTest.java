@@ -7,6 +7,7 @@ import android.accounts.AuthenticatorException;
 import android.accounts.NetworkErrorException;
 import android.accounts.OperationCanceledException;
 import android.os.Bundle;
+import android.os.Process;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -53,7 +54,7 @@ public class OAuthAuthenticatorTest {
     @Test
     public void accessTokenReturnedImmediately()
             throws NetworkErrorException, AuthenticatorException, OperationCanceledException,
-                    IOException {
+            IOException {
         am.addAccountExplicitly(account, null, null);
         final String accessToken = "access1";
         am.setAuthToken(account, tokenType, accessToken);
@@ -67,9 +68,29 @@ public class OAuthAuthenticatorTest {
     }
 
     @Test
+    public void denyAccessTokenForUnknownPackage()
+            throws NetworkErrorException, AuthenticatorException, OperationCanceledException,
+            IOException {
+        am.addAccountExplicitly(account, null, null);
+
+        // when
+        final Bundle result;
+        try {
+            result = authenticator.getAuthToken(response, account, "bearer", Bundle.EMPTY);
+        } catch (NetworkErrorException e) {
+            fail(e.getMessage());
+            return;
+        }
+
+        // then
+        assertNotNull(result);
+        assertEquals(AccountManager.ERROR_CODE_CANCELED, result.getInt(AccountManager.KEY_ERROR_CODE));
+    }
+
+    @Test
     public void errorOnInvalidRefreshToken()
             throws NetworkErrorException, AuthenticatorException, OperationCanceledException,
-                    IOException {
+            IOException {
         am.addAccountExplicitly(account, null, null);
         am.setPassword(account, "invalid");
 
@@ -90,13 +111,23 @@ public class OAuthAuthenticatorTest {
     public void noLoginIntentProvided() throws NetworkErrorException {
         Mockito.doAnswer(invocation -> null).when(authCallback).getLoginIntent();
 
-        Bundle result = authenticator.addAccount(response, account.type, tokenType, null, null);
+        Bundle result = authenticator.addAccount(response, account.type, tokenType, null, createOptionBundle());
+    }
+
+    @Test
+    public void denyAddAccountForUnknownPackage() throws NetworkErrorException {
+        // when
+        Bundle result = authenticator.addAccount(response, account.type, tokenType, null, Bundle.EMPTY);
+
+        // then
+        assertNotNull(result);
+        assertEquals(AccountManager.ERROR_CODE_CANCELED, result.getInt(AccountManager.KEY_ERROR_CODE));
     }
 
     @Test
     public void accessTokenReturnedAfterRefresh()
             throws NetworkErrorException, AuthenticatorException, OperationCanceledException,
-                    IOException {
+            IOException {
         am.addAccountExplicitly(account, null, null);
         final String accessToken = "access1";
         am.setPassword(account, "refresh1");
@@ -229,10 +260,16 @@ public class OAuthAuthenticatorTest {
     private Bundle getAuthTokenWithResponse(
             Account account, AccountAuthenticatorResponse response) {
         try {
-            return authenticator.getAuthToken(response, account, "bearer", null);
+            return authenticator.getAuthToken(response, account, "bearer", createOptionBundle());
         } catch (NetworkErrorException e) {
             fail(e.getMessage());
             return null;
         }
+    }
+
+    private Bundle createOptionBundle() {
+        final Bundle bundle = new Bundle();
+        bundle.putInt(AccountManager.KEY_CALLER_UID, Process.myUid());
+        return bundle;
     }
 }

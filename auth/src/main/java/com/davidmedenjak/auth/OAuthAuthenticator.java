@@ -8,10 +8,12 @@ import android.accounts.NetworkErrorException;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import android.os.Process;
 import android.text.TextUtils;
 import android.util.Log;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -70,7 +72,7 @@ public class OAuthAuthenticator extends AbstractAccountAuthenticator {
             @NonNull String accountType,
             @Nullable String authTokenType,
             @Nullable String[] requiredFeatures,
-            @Nullable Bundle options)
+            @NonNull Bundle options)
             throws NetworkErrorException {
         log(
                 "addAccount for %s as %s with features %s and options %s",
@@ -78,6 +80,11 @@ public class OAuthAuthenticator extends AbstractAccountAuthenticator {
                 authTokenType,
                 Arrays.toString(requiredFeatures),
                 BundleUtil.toString(options));
+
+        final int uid = options.getInt(AccountManager.KEY_CALLER_UID);
+        if (isUidBlocked(uid)) {
+            return createErrorBundleAccessDenied();
+        }
 
         final Bundle bundle = new Bundle();
         final Intent intent = service.getLoginIntent();
@@ -104,11 +111,16 @@ public class OAuthAuthenticator extends AbstractAccountAuthenticator {
             @NonNull final AccountAuthenticatorResponse response,
             @NonNull final Account account,
             @NonNull final String authTokenType,
-            @Nullable final Bundle options)
+            @NonNull final Bundle options)
             throws NetworkErrorException {
         log(
                 "getAuthToken for %s as %s with options %s",
                 account, authTokenType, BundleUtil.toString(options));
+
+        final int uid = options.getInt(AccountManager.KEY_CALLER_UID);
+        if (isUidBlocked(uid)) {
+            return createErrorBundleAccessDenied();
+        }
 
         if (isAnotherThreadHandlingIt(account, response)) return null;
 
@@ -131,6 +143,18 @@ public class OAuthAuthenticator extends AbstractAccountAuthenticator {
 
         // return result via response async
         return null;
+    }
+
+    @NonNull
+    private Bundle createErrorBundleAccessDenied() {
+        final Bundle result = new Bundle();
+        result.putInt(AccountManager.KEY_ERROR_CODE, AccountManager.ERROR_CODE_CANCELED);
+        result.putString(AccountManager.KEY_ERROR_MESSAGE, "Access denied");
+        return result;
+    }
+
+    private boolean isUidBlocked(int uid) {
+        return uid != Process.myUid();
     }
 
     private synchronized boolean isAnotherThreadHandlingIt(
