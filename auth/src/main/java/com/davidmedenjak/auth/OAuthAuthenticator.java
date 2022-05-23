@@ -266,6 +266,12 @@ public class OAuthAuthenticator extends AbstractAccountAuthenticator {
                 onError(TokenRefreshError.NETWORK);
             } catch (TokenRefreshError e) {
                 onError(e);
+            } catch (Exception e) {
+                final TokenRefreshError error = new TokenRefreshError(
+                        AccountManager.ERROR_CODE_UNSUPPORTED_OPERATION,
+                        e.getMessage()
+                );
+                onError(error);
             }
         }
 
