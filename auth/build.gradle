@@ -1,18 +1,19 @@
-plugins {
-    id "com.jfrog.bintray" version "1.8.1"
-}
 apply plugin: 'com.android.library'
-apply plugin: 'com.github.dcendents.android-maven'
+apply plugin: 'maven-publish'
 
 group = 'com.davidmedenjak.auth'
-version = '0.3.0'
+version = '0.3.0-SNAPSHOT'
 
 android {
     compileSdkVersion project.compileSdkVersion
 
     defaultConfig {
         minSdkVersion 14
-        targetSdkVersion 28
+        targetSdkVersion 32
+    }
+
+    buildFeatures {
+        buildConfig = false
     }
 
     buildTypes {
@@ -27,34 +28,53 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
-    // TODO replace with https://issuetracker.google.com/issues/72050365 once released.
-    libraryVariants.all {
-        it.generateBuildConfig.enabled = false
-    }
-
     testOptions {
         unitTests {
             includeAndroidResources = true
         }
     }
-}
-
-bintray {
-    user = 'bleeding182'
-    key = System.getenv('BINTRAY_KEY')
-
-    pkg {
-        repo = 'bleeding182'
-        name = 'auth'
-        licenses = ['MIT']
-        vcsUrl = 'https://github.com/bleeding182/auth'
-        version {
-            name = project.version
-            desc = ''
-            vcsTag = System.getenv('TRAVIS_TAG')
+    publishing {
+        singleVariant('release') {
+            withSourcesJar()
+            withJavadocJar()
         }
     }
-    configurations = ['archives']
+}
+
+
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                // Applies the component for the release build variant.
+                from components.release
+
+                // You can then customize attributes of the publication as shown below.
+                artifactId = 'auth'
+                pom {
+                    name = "Auth"
+                    description = "Auth library that wraps the AccountManager Framework"
+                    url = "https://github.com/bleeding182/auth"
+                    licenses {
+                        license {
+                            name = "MIT License"
+                            url = "https://github.com/bleeding182/auth/blob/master/LICENSE"
+                        }
+                    }
+                    developers {
+                        developer {
+                            id = "bleeding182"
+                            name = "David Medenjak"
+                        }
+                    }
+                    scm {
+                        connection = "scm:git:git://github.com/bleeding182/auth"
+                        url = "https://github.com/bleeding182/auth"
+                    }
+                }
+            }
+        }
+    }
 }
 
 task generateSourcesJar(type: Jar) {
@@ -89,7 +109,7 @@ dependencies {
     compileOnly 'javax.inject:javax.inject:1'
 
     testImplementation 'junit:junit:4.12'
-    testImplementation "org.robolectric:robolectric:4.2"
+    testImplementation "org.robolectric:robolectric:4.8.1"
     testImplementation "com.google.truth:truth:0.39"
     testImplementation "org.mockito:mockito-core:2.18.3"
 }

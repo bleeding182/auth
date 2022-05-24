@@ -28,11 +28,3 @@ deploy:
     on:
       repo: bleeding182/auth
       tags: true
-  - provider: script
-    script: ./gradlew bintrayUpload
-    skip_cleanup: true
-    on:
-      tags: true
-env:
-  global:
-    secure: po60jGS/pxiTpTcQ53TwZHqTYYf9G3oCIDzoocSOI3ObhvUdky7+ZU0BaTEW8soTk2VpCmrpysK/597SkUJaZZSFTXHcmQpvrDO/wnnLrquETXlZHoQ22MgErV6fZwTGo9VRjhnihcfIcS5mWkVnCOWZL1+TWf5Lz+2R2dcY7wVBLjigQKFe3QzdMDIf6DvLmQj/TpqnJTsXr+Ok1qMIa2vE8b1tobgA85wsZgZqIf2CccF7ixbTPjODwx91VI0Z0Hx8g2kdOMMDFZSN4A/ZY4OtQo7hfm9e1t3CLHO1eN4ojj+WJArOiBh2IHKJRanan8JJ0GbR67bWWa0m01VY90AZZHHyy4iKYwZFNMZWrZCtng2+kE17/QMAmESts/rjboAgNRLOc3N80gQH6cJTvnyFvwbYkTypXgxo8T48GX0fY6MJ+64zKOipB/tfxXxX4L8kwlegD6m38+kKhwdHlmKVVp0jt3noyIdLv8F1IaNw0Dc273nJ3BYYUbhHKRKXcn5Ch5A2hwi+otPMHaCRZVeQZTrSUogrmM3Q6b5DcMkUZqwxuQj4Ave/qXAA+VbbmLUH5MwNpf+T+JN3uQeRg+knc41TjL46KDJCNSFdDcPKa3G8GoMCjl47PQdgqBN6+oOEmeQcdyGrA7ntRoQ2wUU6qnGQk1w2R6GAoeDDSEY=

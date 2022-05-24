@@ -84,6 +84,26 @@ public class OAuthAuthenticatorTest {
     }
 
     @Test
+    public void errorOnNullPointerException() throws IOException, TokenRefreshError {
+        am.addAccountExplicitly(account, null, null);
+        am.setPassword(account, "invalid");
+
+        Mockito.doAnswer(
+                        invocation -> {
+                            String refreshToken = (String) invocation.getArguments()[0];
+                            throw new NullPointerException();
+                        })
+                .when(authCallback)
+                .authenticate(anyString());
+        // when
+        Bundle result = getAuthTokenWithResponse();
+
+        // then
+        assertNull(result);
+        verify(response).onError(eq(AccountManager.ERROR_CODE_UNSUPPORTED_OPERATION), any());
+    }
+
+    @Test
     public void noLoginIntentProvided() throws NetworkErrorException {
         Mockito.doAnswer(invocation -> null).when(authCallback).getLoginIntent();
 

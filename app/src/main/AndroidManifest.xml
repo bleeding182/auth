@@ -22,6 +22,7 @@
         <!-- Service to register the authenticator -->
         <service
             android:name=".auth.RedditAuthenticatorService"
+            android:exported="true"
             android:permission="android.permission.ACCOUNT_MANAGER">
             <intent-filter>
                 <action android:name="android.accounts.AccountAuthenticator" />
@@ -37,6 +38,7 @@
         <!-- region >>> App Sample Screens <<< -->
         <activity
             android:name=".features.home.HomeActivity"
+            android:exported="true"
             android:launchMode="singleTop">
             <intent-filter>
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -52,6 +54,7 @@
 
         <activity
             android:name=".auth.login.LoginActivity"
+            android:exported="true"
             android:launchMode="singleInstance">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />

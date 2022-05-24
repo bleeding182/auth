@@ -18,6 +18,9 @@ import com.davidmedenjak.redditsample.app.App;
 import com.davidmedenjak.redditsample.auth.login.LoginActivity;
 import com.davidmedenjak.redditsample.features.latestcomments.LatestCommentsActivity;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class HomeActivity extends AppCompatActivity implements OnAccountsUpdateListener {
 
     private OAuthAccountManager oauthAccountManager;
@@ -68,6 +71,13 @@ public class HomeActivity extends AppCompatActivity implements OnAccountsUpdateL
 
     @Override
     public void onAccountsUpdated(Account[] accounts) {
-        adapter.updateAccounts(accounts);
+        final List<Account> filteredAccounts = new ArrayList<>();
+        final String type = getString(R.string.account_type);
+        for (Account account : accounts) {
+            if (account.type.equals(type)) {
+                filteredAccounts.add(account);
+            }
+        }
+        adapter.updateAccounts(filteredAccounts.toArray(new Account[0]));
     }
 }
